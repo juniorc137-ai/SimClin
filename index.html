@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>SimClin – Monitor Cardíaco</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#030a03}
+:root{
+  --ecg:#00e676;--spo:#40c4ff;--resp:#90a4ae;
+  --bp:#ff9800;--tmp:#f48fb1;--alarm:#ff1744;
+  --bg:#030a03;--bg2:#020802;--bdr:#0a200a;
+  --mono:'Share Tech Mono',monospace;
+}
+.scr{position:fixed;inset:0;display:none;flex-direction:column}
+
+/* ── LANDING ───────────────────────────────────────────── */
+#s0{background:radial-gradient(ellipse at 50% 35%,#071507 0%,var(--bg) 70%);
+    align-items:center;justify-content:center}
+.lw{width:100%;max-width:420px;padding:20px;text-align:center}
+.lg-uni{font:10px var(--mono);letter-spacing:5px;color:#005030;margin-bottom:5px}
+.lg-big{font:900 52px var(--mono);color:var(--ecg);text-shadow:0 0 40px #00e67660;letter-spacing:2px;line-height:1}
+.lg-big s{text-decoration:none;color:var(--spo)}
+.lg-tag{font:10px var(--mono);letter-spacing:3px;color:#004020;margin-top:4px}
+.card{background:#06100a;border:1px solid #0c2010;border-radius:14px;padding:24px;margin-top:26px}
+.cl{font:10px var(--mono);letter-spacing:2px;color:#004828;margin-bottom:10px}
+#ri{width:100%;background:var(--bg);border:1px solid #0a1e0a;border-radius:8px;
+    padding:12px;color:var(--ecg);font:36px var(--mono);text-align:center;
+    letter-spacing:12px;outline:none;caret-color:var(--ecg)}
+#ri::placeholder{color:#002a14;letter-spacing:4px}
+.err{color:var(--alarm);font-size:11px;margin-top:5px;min-height:16px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.lb{background:var(--bg);border-radius:8px;padding:13px 8px;cursor:pointer;
+    font:13px var(--mono);letter-spacing:1px;transition:background .2s;border:none}
+.lb.m{border:1px solid var(--ecg);color:var(--ecg);box-shadow:0 0 12px #00e67618}
+.lb.m:active{background:#091e0c}
+.lb.ins{border:1px solid var(--spo);color:var(--spo);box-shadow:0 0 12px #40c4ff18}
+.lb.ins:active{background:#001520}
+.hint{margin-top:12px;padding:10px;background:var(--bg);border-radius:6px;border:1px solid #081608}
+.ht{font:9px var(--mono);letter-spacing:1px;color:#003d18;margin-bottom:3px}
+.hb{font-size:11px;color:#003016;line-height:1.6}
+
+/* ── MONITOR ───────────────────────────────────────────── */
+#s1{background:var(--bg);color:var(--ecg);font-family:var(--mono)}
+.mhdr{display:flex;justify-content:space-between;align-items:center;
+      padding:5px 12px;background:var(--bg2);border-bottom:1px solid var(--bdr);
+      flex-wrap:wrap;gap:4px;flex-shrink:0}
+.ml,.mr{display:flex;gap:8px;align-items:center}
+.bk{cursor:pointer;color:#004020;font-size:11px;letter-spacing:1px;padding:2px 4px}
+.rl{color:#00a040;font-size:12px;letter-spacing:2px}
+.dot{width:8px;height:8px;border-radius:50%;background:#1a2a1a;transition:background .4s;flex-shrink:0}
+.dot.on{background:var(--ecg)}.dot.er{background:var(--alarm)}.dot.yw{background:#ffb300}
+.rhl{font-size:11px;letter-spacing:1px}
+.alb{color:var(--alarm);font-size:11px;display:none}
+.frb{color:#ffee58;font-size:11px;display:none}
+.clk{color:#008035;font-size:17px}
+
+.waves{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.wr{position:relative;border-bottom:1px solid var(--bdr);overflow:hidden}
+.wr canvas{width:100%;height:100%;display:block}
+.wl{position:absolute;top:4px;left:8px;font-size:10px;opacity:.55;z-index:1;font-family:var(--mono)}
+.wv{position:absolute;bottom:5px;right:10px;font-weight:bold;z-index:2;line-height:1;font-family:var(--mono)}
+.wv small{opacity:.5;font-size:.38em}
+.mbtm{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--bdr);background:var(--bg2);flex-shrink:0}
+.vb{padding:8px 14px;border-right:1px solid var(--bdr)}
+.vl2{font-size:9px;letter-spacing:2px;color:#003515;font-family:var(--mono)}
+.vv{font-weight:bold;line-height:1.1;font-family:var(--mono)}
+.vu{font-size:9px;color:#005025;font-family:var(--mono)}
+
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes flash{0%,100%{background:var(--bg)}50%{background:#220000}}
+.alarming{animation:flash 1.2s step-end infinite}
+.blinking{animation:blink 1s step-end infinite}
+
+/* ── INSTRUCTOR ─────────────────────────────────────────── */
+#s2{background:#0d1117;color:#c9d1d9;font-family:system-ui,sans-serif}
+.ihdr{background:#161b22;border-bottom:1px solid #21262d;padding:8px 14px;
+      display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.il{display:flex;gap:8px;align-items:center}
+.ibk{cursor:pointer;color:#8b949e;font-size:13px}
+.rb{background:#0d1117;border:1px solid #30363d;border-radius:6px;
+    padding:4px 12px;font:bold 13px monospace;color:#58a6ff;letter-spacing:2px}
+.ist{display:flex;gap:8px;align-items:center;font-size:12px;color:#8b949e;flex-wrap:wrap}
+.iact{display:flex;gap:6px;flex-wrap:wrap}
+.ib{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:6px 11px;
+    color:#c9d1d9;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap;transition:all .15s}
+.ib:active{background:#21262d}
+.ib.af{border-color:#ffb300;color:#ffb300;background:#ffb30012}
+.ib.aa{border-color:#ef5350;color:#ef5350;background:#ef535012}
+.cbar{display:flex;align-items:center;gap:6px;padding:3px 10px;
+      background:#161b22;border-bottom:1px solid #21262d;font-size:11px;color:#8b949e;flex-shrink:0}
+
+.tabs{display:flex;background:#161b22;border-bottom:1px solid #21262d;flex-shrink:0}
+.tab{flex:1;padding:10px 4px;border:none;border-bottom:2px solid transparent;
+     background:transparent;color:#8b949e;cursor:pointer;font-size:13px;font-weight:500}
+.tab.on{color:#58a6ff;border-bottom-color:#58a6ff}
+
+.body{flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch}
+.pane{display:none}.pane.on{display:block}
+
+.scg{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px}
+.scb{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:10px 8px;
+     color:#c9d1d9;cursor:pointer;font-size:13px;text-align:left;line-height:1.4;width:100%}
+.scb:active{background:#1f2937}
+
+.rhg{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px}
+.rhb{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:10px 12px;
+     color:#c9d1d9;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px;width:100%}
+.rdo{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+.vlist{display:flex;flex-direction:column;gap:18px}
+.vrow{display:flex;flex-direction:column;gap:5px}
+.vrh{display:flex;justify-content:space-between}
+.vrlb{font-size:13px;color:#8b949e}
+.vrn{font:bold 18px monospace}
+input[type=range]{width:100%;height:4px;-webkit-appearance:none;appearance:none;border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;cursor:pointer}
+.bpg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bpl{font-size:12px;color:#8b949e;margin-bottom:3px}
+.bpi{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;
+     padding:6px 10px;color:#ff9800;font:bold 18px monospace;outline:none;box-sizing:border-box}
+
+.ic{background:#161b22;border-radius:8px;padding:14px;margin-bottom:12px}
+.ict{font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+.cdbox{background:#0d1117;border:1px solid #30363d;border-radius:6px;
+       padding:8px;font:bold 26px monospace;color:#58a6ff;letter-spacing:6px;text-align:center;margin:8px 0}
+.ib2{font-size:14px;line-height:1.7;color:#c9d1d9}
+.qa{display:flex;flex-wrap:wrap;gap:8px}
+pre{font-size:11px;color:#8b949e;white-space:pre-wrap;font-family:monospace}
+@media(max-width:380px){.lg-big{font-size:38px}.clk{font-size:14px}}
+</style>
+</head>
+<body>
+
+<!-- LANDING -->
+<div id="s0" class="scr">
+  <div class="lw">
+    <div class="lg-uni">UNIVALI · INCOR</div>
+    <div class="lg-big">SIM<s>CLIN</s></div>
+    <div class="lg-tag">MONITOR CARDÍACO · SIMULAÇÃO CLÍNICA</div>
+    <div class="card">
+      <div class="cl">CÓDIGO DA SALA</div>
+      <input id="ri" type="tel" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off"/>
+      <div class="err" id="err"></div>
+      <div class="btns">
+        <button class="lb m"   onclick="enter('monitor')">📟 MONITOR</button>
+        <button class="lb ins" onclick="enter('instructor')">🎛️ INSTRUTOR</button>
+      </div>
+      <div class="hint">
+        <div class="ht">COMO FUNCIONA</div>
+        <div class="hb">Instrutor abre → cria código de sala → Monitor abre em outro dispositivo com o mesmo código → sincronização automática via WebSocket ✓</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MONITOR -->
+<div id="s1" class="scr">
+  <div class="mhdr">
+    <div class="ml">
+      <span class="bk" onclick="goBack()">← SAIR</span>
+      <span class="rl" id="mrl">SALA ----</span>
+      <span class="dot" id="mdot"></span>
+    </div>
+    <span class="rhl" id="mrh" style="color:var(--ecg)">Sinusal Normal</span>
+    <div class="mr">
+      <span class="alb blinking" id="malb">⚠ ALARME</span>
+      <span class="frb" id="mfrb">⏸ PAUSE</span>
+      <span class="clk" id="mclk"></span>
+    </div>
+  </div>
+  <div class="waves" id="waves">
+    <div class="wr" id="ecgrow" style="flex:1.4">
+      <span class="wl" id="ecglbl" style="color:var(--ecg)">ECG  DII</span>
+      <canvas id="ce"></canvas>
+      <div class="wv" id="vhr" style="font-size:36px;color:var(--ecg)">72 <small>bpm</small></div>
+    </div>
+    <div class="wr" style="flex:1.05">
+      <span class="wl" style="color:var(--spo)">SpO₂  PLETH</span>
+      <canvas id="cs"></canvas>
+      <div class="wv" id="vspo" style="font-size:34px;color:var(--spo)">98<small>%</small></div>
+    </div>
+    <div class="wr" style="flex:0.8">
+      <span class="wl" style="color:var(--resp)">RESP</span>
+      <canvas id="cr"></canvas>
+      <div class="wv" id="vrr" style="font-size:26px;color:var(--resp)">16<small> rpm</small></div>
+    </div>
+  </div>
+  <div class="mbtm">
+    <div class="vb">
+      <div class="vl2">PRESSÃO ARTERIAL</div>
+      <div class="vv" id="vbp" style="font-size:26px;color:var(--bp)">120/80</div>
+      <div class="vu">mmHg</div>
+    </div>
+    <div class="vb">
+      <div class="vl2">TEMPERATURA</div>
+      <div class="vv" id="vtmp" style="font-size:22px;color:var(--tmp)">36.5°C</div>
+    </div>
+  </div>
+</div>
+
+<!-- INSTRUCTOR -->
+<div id="s2" class="scr">
+  <div class="ihdr">
+    <div class="il">
+      <span class="ibk" onclick="goBack()">← Sair</span>
+      <span class="rb" id="irl">SALA ----</span>
+      <span class="dot" id="idot"></span>
+    </div>
+    <div class="ist">
+      <span id="ist-rh" style="font-weight:bold">Sinusal Normal</span>
+      <span id="ist-hr">● 72 bpm</span>
+      <span id="ist-sp">SpO₂ 98%</span>
+      <span id="ist-bp">PA 120/80</span>
+    </div>
+    <div class="iact">
+      <button class="ib" id="bfrz" onclick="togFreeze()">⏸ Congelar</button>
+      <button class="ib" id="balm" onclick="togAlarms()">🔔 Alarmes</button>
+    </div>
+  </div>
+  <div class="cbar">
+    <span class="dot" id="idot2"></span>
+    <span id="cmsg">Conectando…</span>
+  </div>
+  <div class="tabs">
+    <button class="tab on"  onclick="swTab(this,'ce2')">Cenários</button>
+    <button class="tab"     onclick="swTab(this,'ri2')">Ritmo</button>
+    <button class="tab"     onclick="swTab(this,'vi2')">Vitais</button>
+    <button class="tab"     onclick="swTab(this,'in2')">Info</button>
+  </div>
+  <div class="body">
+    <div class="pane on" id="p-ce2"><div class="scg" id="scg"></div></div>
+    <div class="pane"    id="p-ri2">
+      <div style="font-size:11px;color:#8b949e;margin-bottom:10px;letter-spacing:1px">SELECIONAR RITMO</div>
+      <div class="rhg" id="rhg"></div>
+    </div>
+    <div class="pane"    id="p-vi2">
+      <div class="vlist">
+        <div class="vrow"><div class="vrh"><span class="vrlb">FC (bpm)</span><span class="vrn" id="dhr" style="color:#00e676">72</span></div>
+          <input id="shr" type="range" min="0" max="260" value="72" style="accent-color:#00e676" oninput="onSl('hr',this.value)"/></div>
+        <div class="vrow"><div class="vrh"><span class="vrlb">SpO₂ (%)</span><span class="vrn" id="dsp" style="color:#40c4ff">98</span></div>
+          <input id="ssp" type="range" min="0" max="100" value="98" style="accent-color:#40c4ff" oninput="onSl('spo2',this.value)"/></div>
+        <div class="vrow"><div class="vrh"><span class="vrlb">FR (rpm)</span><span class="vrn" id="drr" style="color:#90a4ae">16</span></div>
+          <input id="srr" type="range" min="0" max="60"  value="16" style="accent-color:#90a4ae" oninput="onSl('rr',this.value)"/></div>
+        <div class="vrow"><div class="vrh"><span class="vrlb">Temperatura (°C)</span><span class="vrn" id="dtm" style="color:#f48fb1">36.5</span></div>
+          <input id="stm" type="range" min="32" max="42" step="0.1" value="36.5" style="accent-color:#f48fb1" oninput="onSl('temp',this.value)"/></div>
+        <div class="bpg">
+          <div><div class="bpl">PAS (mmHg)</div><input class="bpi" id="isbp" type="number" min="0" max="220" value="120" oninput="onBP('sbp',this.value)"/></div>
+          <div><div class="bpl">PAD (mmHg)</div><input class="bpi" id="idbp" type="number" min="0" max="140" value="80"  oninput="onBP('dbp',this.value)"/></div>
+        </div>
+      </div>
+    </div>
+    <div class="pane"    id="p-in2">
+      <div class="ic" style="border:1px solid #58a6ff30">
+        <div class="ict" style="color:#58a6ff">Como usar em outro dispositivo</div>
+        <div class="ib2">
+          1. Acesse este mesmo site no dispositivo monitor.<br/>
+          2. Selecione <b>📟 MONITOR</b>.<br/>
+          3. Digite o código da sala:
+          <div class="cdbox" id="icode">----</div>
+          4. Sincronização automática via WebSocket. ✓
+        </div>
+      </div>
+      <div class="ic" style="border:1px solid #58a6ff30">
+        <div class="ict" style="color:#58a6ff">Ações Rápidas</div>
+        <div class="qa">
+          <button class="ib" style="border-color:#ef5350;color:#ef5350" onclick="trigPCR()">⚡ PCR Imediato</button>
+          <button class="ib" style="border-color:#00e676;color:#00e676" onclick="apSc(SCENARIOS[0])">✅ Restaurar Estável</button>
+        </div>
+      </div>
+      <div class="ic" style="border:1px solid #21262d">
+        <div class="ict" style="color:#8b949e">Estado Transmitido</div>
+        <pre id="sjson">{}</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════════════
+const RHYTHMS=[
+  {id:"sinusal",     label:"Sinusal Normal",          color:"#00e676",defHR:72 },
+  {id:"bradycardia", label:"Bradicardia Sinusal",      color:"#69f0ae",defHR:42 },
+  {id:"tachycardia", label:"Taquicardia Sinusal",      color:"#ffee58",defHR:122},
+  {id:"afib",        label:"Fibrilação Atrial",        color:"#ffa726",defHR:108},
+  {id:"flutter",     label:"Flutter Atrial",           color:"#ff7043",defHR:75 },
+  {id:"svt",         label:"TSVP",                    color:"#ea80fc",defHR:182},
+  {id:"bav1",        label:"BAV 1° Grau",             color:"#40c4ff",defHR:62 },
+  {id:"vt",          label:"Taquicardia Ventricular",  color:"#ff1744",defHR:168},
+  {id:"aesp",        label:"AESP",                    color:"#90a4ae",defHR:0  },
+  {id:"asystole",    label:"Assistolia",              color:"#546e7a",defHR:0  },
+];
+const SCENARIOS=[
+  {label:"🟢 Estável",          rhythm:"sinusal",     hr:72, spo2:98,rr:16,temp:36.5,sbp:120,dbp:78},
+  {label:"🟡 Taquicardia",       rhythm:"tachycardia", hr:128,spo2:94,rr:22,temp:37.2,sbp:105,dbp:68},
+  {label:"🟡 Bradicardia",       rhythm:"bradycardia", hr:42, spo2:96,rr:14,temp:36.8,sbp:88, dbp:58},
+  {label:"🟠 Hipotensão",        rhythm:"sinusal",     hr:108,spo2:95,rr:20,temp:36.6,sbp:76, dbp:44},
+  {label:"🟠 FA c/ RVR",         rhythm:"afib",        hr:118,spo2:93,rr:20,temp:36.9,sbp:95, dbp:62},
+  {label:"🔴 TV c/ Pulso",       rhythm:"vt",          hr:172,spo2:88,rr:28,temp:37.0,sbp:82, dbp:50},
+  {label:"🔴 PCR – Assistolia",  rhythm:"asystole",    hr:0,  spo2:0, rr:0, temp:36.0,sbp:0,  dbp:0 },
+  {label:"🔴 Choque Séptico",    rhythm:"tachycardia", hr:124,spo2:91,rr:26,temp:38.9,sbp:78, dbp:45},
+  {label:"🔴 IAM c/ Supra",      rhythm:"sinusal",     hr:95, spo2:94,rr:22,temp:37.1,sbp:100,dbp:65},
+  {label:"🟢 Pós-PCR",           rhythm:"sinusal",     hr:88, spo2:96,rr:18,temp:36.4,sbp:110,dbp:70},
+];
+
+// ════════════════════════════════════════════════════════
+// WAVEFORM ENGINE
+// ════════════════════════════════════════════════════════
+const SR=200,BL=SR*5;
+const G=(t,u,s,a)=>a*Math.exp(-.5*((t-u)/s)**2);
+function mkBeat(rh,hr){
+  let n=Math.round(SR*60/Math.max(hr,1));
+  if(rh==="afib")n=Math.round(n*(.78+Math.random()*.44));
+  if(rh==="asystole"||rh==="aesp")n=(SR*1.5)|0;
+  n=Math.max(n,25);
+  const s=new Float32Array(n);
+  for(let i=0;i<n;i++){
+    const t=i/n;
+    switch(rh){
+      case"sinusal":case"bradycardia":case"tachycardia":case"bav1":
+        s[i]=G(t,.12,.025,.15)+G(t,.28,.008,-.1)+G(t,.30,.012,1)+G(t,.32,.008,-.28)+G(t,.50,.042,.36);break;
+      case"afib":
+        s[i]=(Math.sin(t*22)+Math.sin(t*31)+Math.sin(t*17))*.024
+             +G(t,.30,.009,-.1)+G(t,.32,.012,.88)+G(t,.34,.009,-.24)+G(t,.52,.042,.27);break;
+      case"flutter":{const p=(t*3.5)%1;s[i]=.22*(p<.6?-p/.6:(p-.6)/.4)+G(t,.34,.010,.82)+G(t,.37,.008,-.20);break;}
+      case"vt":s[i]=G(t,.18,.055,-.3)+G(t,.30,.072,1.12)+G(t,.47,.060,-.52)+G(t,.63,.052,.32)+.08;break;
+      case"svt":s[i]=G(t,.28,.008,-.08)+G(t,.30,.010,1)+G(t,.32,.008,-.20)+G(t,.46,.025,.14)+G(t,.61,.014,-.07);break;
+      case"aesp":s[i]=(t<.028?G(t,.014,.006,.38):0)+(Math.random()-.5)*.012;break;
+      default:s[i]=(Math.random()-.5)*.014;
+    }
+  }
+  return s;
+}
+function mkPleth(hr,sp){
+  const n=Math.round(SR*60/Math.max(hr,30)),a=Math.max(0,sp)/100;
+  const s=new Float32Array(n);
+  for(let i=0;i<n;i++){const t=i/n;s[i]=G(t,.18,.062,a)+G(t,.32,.030,a*.26)-G(t,.28,.016,a*.16);}
+  return s;
+}
+class Eng{
+  constructor(mode){this.mode=mode;this.rh="sinusal";this.hr=72;this.sp=98;this.b=new Float32Array(0);this.p=0;this._r();}
+  cfg(rh,hr,sp){this.rh=rh;this.hr=hr;this.sp=sp;}
+  _r(){this.b=this.mode==="e"?mkBeat(this.rh,this.hr):mkPleth(this.hr,this.sp);this.p=0;}
+  next(){if(this.p>=this.b.length)this._r();const v=this.b[this.p++];return isNaN(v)?0:v;}
+}
+const EE=new Eng("e"),SE=new Eng("p");
+let rph=0;
+function rNext(){if(!ST.rr)return(Math.random()-.5)*.01;rph+=2*Math.PI*ST.rr/60/SR;return Math.sin(rph)*.6;}
+
+// ════════════════════════════════════════════════════════
+// CANVAS
+// ════════════════════════════════════════════════════════
+const CVS={e:{id:"ce",buf:new Float32Array(BL)},s:{id:"cs",buf:new Float32Array(BL)},r:{id:"cr",buf:new Float32Array(BL)}};
+let raf=null,lt=performance.now(),re=0,rs=0,rre=0;
+function initC(c){
+  c.el=document.getElementById(c.id);
+  const dpr=devicePixelRatio||1;
+  new ResizeObserver(()=>{c.el.width=c.el.offsetWidth*dpr;c.el.height=c.el.offsetHeight*dpr;}).observe(c.el);
+}
+function drawC(c,col){
+  const dpr=devicePixelRatio||1,cv=c.el;
+  if(!cv||!cv.width)return;
+  const ctx=cv.getContext("2d"),w=cv.width/dpr,h=cv.height/dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle="#030a03";ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle="rgba(0,55,0,.4)";ctx.lineWidth=.5;
+  for(let i=0;i<=10;i++){ctx.beginPath();ctx.moveTo(i*w/10,0);ctx.lineTo(i*w/10,h);ctx.stroke();}
+  for(let i=0;i<=4;i++){ctx.beginPath();ctx.moveTo(0,i*h/4);ctx.lineTo(w,i*h/4);ctx.stroke();}
+  const mid=h*.5,sc=h*.38,b=c.buf;
+  ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=2;ctx.shadowColor=col;ctx.shadowBlur=10;
+  for(let i=0;i<BL;i++){const x=i/BL*w,y=mid-b[i]*sc;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+  ctx.stroke();ctx.shadowBlur=0;
+}
+function loop(now){
+  const dt=now-lt;lt=now;
+  if(!ST.frozen){
+    const a=dt*SR/1e3;
+    const n1=Math.min(Math.floor(a+re),80);re=a+re-n1;
+    const n2=Math.min(Math.floor(a+rs),80);rs=a+rs-n2;
+    const n3=Math.min(Math.floor(a+rre),80);rre=a+rre-n3;
+    if(n1){CVS.e.buf.copyWithin(0,n1);for(let i=BL-n1;i<BL;i++)CVS.e.buf[i]=EE.next();}
+    if(n2){CVS.s.buf.copyWithin(0,n2);for(let i=BL-n2;i<BL;i++)CVS.s.buf[i]=SE.next();}
+    if(n3){CVS.r.buf.copyWithin(0,n3);for(let i=BL-n3;i<BL;i++)CVS.r.buf[i]=rNext();}
+  }
+  const flat=ST.rhythm==="asystole"||ST.rhythm==="aesp";
+  const rh=RHYTHMS.find(r=>r.id===ST.rhythm)||RHYTHMS[0];
+  const alHR=ST.alarms&&(flat||ST.hr<45||ST.hr>150);
+  const alSP=ST.alarms&&ST.spo2>0&&ST.spo2<90;
+  drawC(CVS.e,alHR?"#ff1744":rh.color);
+  drawC(CVS.s,alSP?"#ff5252":"#40c4ff");
+  drawC(CVS.r,"#90a4ae");
+  raf=requestAnimationFrame(loop);
+}
+
+// ════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════
+let ST={rhythm:"sinusal",hr:72,spo2:98,rr:16,temp:36.5,sbp:120,dbp:80,frozen:false,alarms:true};
+let ROLE="",ROOM="";
+
+function render(patch){
+  if(patch)Object.assign(ST,patch);
+  const flat=ST.rhythm==="asystole"||ST.rhythm==="aesp";
+  const rh=RHYTHMS.find(r=>r.id===ST.rhythm)||RHYTHMS[0];
+  const alHR=ST.alarms&&(flat||ST.hr<45||ST.hr>150);
+  const alSP=ST.alarms&&ST.spo2>0&&ST.spo2<90;
+  const alBP=ST.alarms&&ST.sbp>0&&(ST.sbp<80||ST.sbp>180);
+  EE.cfg(ST.rhythm,ST.hr,ST.spo2);SE.cfg(ST.rhythm,ST.hr,ST.spo2);
+
+  if(ROLE==="monitor"){
+    $("mrh").textContent=rh.label;$("mrh").style.color=rh.color;
+    $("vhr").innerHTML=`${flat?"---":ST.hr} <small>bpm</small>`;$("vhr").style.color=alHR?"#ff1744":rh.color;
+    $("vspo").innerHTML=`${!ST.spo2?"---":ST.spo2}<small>%</small>`;$("vspo").style.color=alSP?"#ff5252":"#40c4ff";
+    $("vrr").innerHTML=`${!ST.rr?"---":ST.rr}<small> rpm</small>`;
+    $("vbp").textContent=(!ST.sbp&&!ST.dbp)?"---/---":`${ST.sbp}/${ST.dbp}`;
+    $("vbp").style.color=alBP?"#ff5252":"#ff9800";
+    $("vtmp").textContent=ST.temp?`${ST.temp}°C`:"---";
+    const any=alHR||alSP||alBP;
+    $("waves").className=any?"waves alarming":"waves";
+    $("malb").style.display=any?"inline":"none";
+    $("mfrb").style.display=ST.frozen?"inline":"none";
+  }
+  if(ROLE==="instructor"){
+    $("ist-rh").textContent=rh.label;$("ist-rh").style.color=rh.color;
+    $("ist-hr").textContent=`● ${flat?"---":ST.hr} bpm`;
+    $("ist-sp").textContent=`SpO₂ ${!ST.spo2?"---":ST.spo2}%`;
+    $("ist-bp").textContent=`PA ${!ST.sbp?"---":ST.sbp}/${!ST.dbp?"---":ST.dbp}`;
+    $("dhr").textContent=ST.hr;$("dsp").textContent=ST.spo2;
+    $("drr").textContent=ST.rr;$("dtm").textContent=ST.temp;
+    $("shr").value=ST.hr;$("ssp").value=ST.spo2;
+    $("srr").value=ST.rr;$("stm").value=ST.temp;
+    $("isbp").value=ST.sbp;$("idbp").value=ST.dbp;
+    $("bfrz").textContent=ST.frozen?"▶ Retomar":"⏸ Congelar";$("bfrz").className="ib"+(ST.frozen?" af":"");
+    $("balm").textContent=ST.alarms?"🔔 Alarmes":"🔕 Silenciado";$("balm").className="ib"+(ST.alarms?"":" aa");
+    $("sjson").textContent=JSON.stringify({ritmo:ST.rhythm,fc:ST.hr,spo2:ST.spo2,pa:`${ST.sbp}/${ST.dbp}`,fr:ST.rr,temp:ST.temp},null,2);
+    buildRh();
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// WEBSOCKET
+// ════════════════════════════════════════════════════════
+let ws=null,wsRetry=0;
+
+function wsUrl(){
+  const proto=location.protocol==="https:"?"wss":"ws";
+  return `${proto}://${location.host}`;
+}
+
+function connect(room,role,onOpen){
+  if(ws){try{ws.close();}catch(e){}}
+  ws=new WebSocket(wsUrl());
+  ws.onopen=()=>{
+    wsRetry=0;
+    ws.send(JSON.stringify({type:"join",room,role}));
+    if(onOpen)onOpen();
+  };
+  ws.onmessage=e=>{
+    let m;try{m=JSON.parse(e.data);}catch{return;}
+    if(m.type==="joined"){
+      if(role==="instructor"){setDot("idot","on");setDot("idot2","on");$("cmsg").textContent="Aguardando monitor…";}
+      else{setDot("mdot","yw");}
+    }
+    if(m.type==="state"&&role==="monitor"){
+      setDot("mdot","on");
+      render(m.state);
+    }
+  };
+  ws.onclose=()=>{
+    if(role==="instructor"){setDot("idot","");setDot("idot2","");$("cmsg").textContent="Reconectando…";}
+    else setDot("mdot","er");
+    if(wsRetry<10){wsRetry++;setTimeout(()=>connect(room,role,null),2000+wsRetry*500);}
+  };
+  ws.onerror=()=>{};
+}
+
+function push(patch){
+  render(patch);
+  if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:"state",state:ST}));
+}
+
+// ════════════════════════════════════════════════════════
+// UI HELPERS
+// ════════════════════════════════════════════════════════
+function $(id){return document.getElementById(id);}
+function show(id){["s0","s1","s2"].forEach(s=>$(s).style.display="none");$(id).style.display="flex";}
+function setDot(id,cls){const d=$(id);if(d)d.className="dot"+(cls?" "+cls:"");}
+
+function enter(role){
+  const raw=$("ri").value.trim();
+  const room=raw||(role==="instructor"?String(Math.floor(1000+Math.random()*8999)):"");
+  if(!room||!/^\d{4}$/.test(room)){$("err").textContent="Digite um código de 4 dígitos";return;}
+  ROOM=room;ROLE=role;
+  if(role==="monitor"){
+    $("mrl").textContent="SALA "+room;show("s1");
+    [CVS.e,CVS.s,CVS.r].forEach(initC);
+    if(raf)cancelAnimationFrame(raf);lt=performance.now();re=rs=rre=0;
+    raf=requestAnimationFrame(loop);
+    setInterval(()=>$("mclk").textContent=new Date().toLocaleTimeString("pt-BR"),1000);
+    connect(room,"monitor",null);
+  }else{
+    $("irl").textContent="SALA "+room;$("icode").textContent=room;
+    show("s2");buildSc();buildRh();render(null);
+    connect(room,"instructor",()=>{});
+  }
+}
+
+function goBack(){
+  if(raf){cancelAnimationFrame(raf);raf=null;}
+  if(ws){try{ws.close();}catch(e){}}ws=null;
+  show("s0");
+}
+
+function swTab(el,id){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("on"));
+  document.querySelectorAll(".pane").forEach(p=>p.classList.remove("on"));
+  el.classList.add("on");$("p-"+id).classList.add("on");
+}
+
+function apSc(s){push({...s});}
+function onSl(k,v){push({[k]:parseFloat(v)});}
+function onBP(k,v){push({[k]:parseInt(v)||0});}
+function togFreeze(){push({frozen:!ST.frozen});}
+function togAlarms(){push({alarms:!ST.alarms});}
+function trigPCR(){push({rhythm:"asystole",hr:0,spo2:0,rr:0,sbp:0,dbp:0});}
+
+function buildSc(){
+  const g=$("scg");g.innerHTML="";
+  SCENARIOS.forEach(s=>{const b=document.createElement("button");b.className="scb";b.textContent=s.label;b.onclick=()=>apSc(s);g.appendChild(b);});
+}
+function buildRh(){
+  const g=$("rhg");g.innerHTML="";
+  RHYTHMS.forEach(r=>{
+    const b=document.createElement("button");b.className="rhb";
+    if(ST.rhythm===r.id)b.style.cssText=`background:#0d2137;border:1px solid ${r.color};color:${r.color};box-shadow:0 0 8px ${r.color}40`;
+    const d=document.createElement("span");d.className="rdo";d.style.background=r.color;
+    b.append(d,r.label);
+    b.onclick=()=>{const p={rhythm:r.id};if(r.defHR>0)p.hr=r.defHR;push(p);};
+    g.appendChild(b);
+  });
+}
+
+$("ri").addEventListener("input",function(){this.value=this.value.replace(/\D/g,"").slice(0,4);$("err").textContent="";});
+$("ri").addEventListener("keydown",e=>{if(e.key==="Enter")enter("monitor");});
+show("s0");
+</script>
+</body>
+</html>
