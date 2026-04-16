@@ -1,0 +1,16 @@
+{
+  "name": "simclin-monitor",
+  "version": "1.0.0",
+  "description": "SimClin – Monitor Cardíaco para Simulação Clínica UNIVALI/INCOR",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.16.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
