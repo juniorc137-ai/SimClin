@@ -397,6 +397,81 @@ function loop(now){
 }
 
 // ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// AUDIO — beep sincronizado com FC + alarme contínuo
+// ════════════════════════════════════════════════════════
+let actx=null, audioUnlocked=false, beepTimer=null, alarmTimer=null;
+
+function getACtx(){
+  if(!actx) actx=new(window.AudioContext||window.webkitAudioContext)();
+  return actx;
+}
+
+// Desbloqueia áudio no primeiro toque do usuário
+function unlockAudio(){
+  if(audioUnlocked)return;
+  try{
+    const ctx=getACtx();
+    if(ctx.state==="suspended")ctx.resume();
+    // toca silêncio para destravar iOS
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    g.gain.value=0;o.connect(g);g.connect(ctx.destination);
+    o.start();o.stop(ctx.currentTime+0.001);
+    audioUnlocked=true;
+  }catch(e){}
+}
+document.addEventListener("touchstart",unlockAudio,{once:true});
+document.addEventListener("click",unlockAudio,{once:true});
+document.addEventListener("keydown",unlockAudio,{once:true});
+
+function beep(freq=880,dur=0.08,vol=0.35,type="sine"){
+  try{
+    const ctx=getACtx();
+    if(ctx.state==="suspended")ctx.resume();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
+    o.connect(g);g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+dur+0.01);
+  }catch(e){}
+}
+
+// Beep cardíaco sincronizado com FC
+function startBeepLoop(){
+  stopBeepLoop();
+  function tick(){
+    const flat=ST.rhythm==="asystole"||ST.rhythm==="aesp";
+    const hr=(!flat&&ST.hr>0)?ST.hr:null;
+    if(hr){
+      beep(880,0.07,0.3,"sine");          // bip principal
+      setTimeout(()=>beep(660,0.04,0.15,"sine"),80); // bip duplo suave
+    }
+    const interval=hr?Math.round(60000/hr):1500;
+    beepTimer=setTimeout(tick, interval);
+  }
+  tick();
+}
+function stopBeepLoop(){if(beepTimer){clearTimeout(beepTimer);beepTimer=null;}}
+
+// Alarme contínuo (sirene) quando há parâmetro crítico
+let alarmOn=false;
+function startAlarm(){
+  if(alarmOn)return; alarmOn=true;
+  function sirene(){
+    if(!alarmOn)return;
+    beep(1200,0.15,0.4,"square");
+    setTimeout(()=>{if(alarmOn)beep(900,0.15,0.4,"square");},180);
+    alarmTimer=setTimeout(sirene,700);
+  }
+  sirene();
+}
+function stopAlarm(){
+  alarmOn=false;
+  if(alarmTimer){clearTimeout(alarmTimer);alarmTimer=null;}
+}
+
+// ════════════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════════════
 let ST={rhythm:"sinusal",hr:72,spo2:98,rr:16,temp:36.5,sbp:120,dbp:80,frozen:false,alarms:true};
@@ -423,6 +498,10 @@ function render(patch){
     $("waves").className=any?"waves alarming":"waves";
     $("malb").style.display=any?"inline":"none";
     $("mfrb").style.display=ST.frozen?"inline":"none";
+    // ── áudio ──
+    if(ST.frozen||!ST.alarms){ stopBeepLoop(); stopAlarm(); }
+    else if(any){ stopBeepLoop(); startAlarm(); }
+    else { stopAlarm(); startBeepLoop(); }
   }
   if(ROLE==="instructor"){
     $("ist-rh").textContent=rh.label;$("ist-rh").style.color=rh.color;
@@ -501,6 +580,8 @@ function enter(role){
     if(raf)cancelAnimationFrame(raf);lt=performance.now();re=rs=rre=0;
     raf=requestAnimationFrame(loop);
     setInterval(()=>$("mclk").textContent=new Date().toLocaleTimeString("pt-BR"),1000);
+    unlockAudio();
+    startBeepLoop();
     connect(room,"monitor",null);
   }else{
     $("irl").textContent="SALA "+room;$("icode").textContent=room;
@@ -511,6 +592,7 @@ function enter(role){
 
 function goBack(){
   if(raf){cancelAnimationFrame(raf);raf=null;}
+  stopBeepLoop(); stopAlarm();
   if(ws){try{ws.close();}catch(e){}}ws=null;
   show("s0");
 }
