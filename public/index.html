@@ -129,6 +129,27 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .ib2{font-size:14px;line-height:1.7;color:#c9d1d9}
 .qa{display:flex;flex-wrap:wrap;gap:8px}
 pre{font-size:11px;color:#8b949e;white-space:pre-wrap;font-family:monospace}
+
+/* ── MOTOR DE CENÁRIOS (modo automático + debriefing) ───── */
+.sel{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 10px;color:#c9d1d9;font-size:14px}
+.muted{color:#8b949e;font-size:13px;margin-top:8px;line-height:1.5}
+.eclk{margin-left:auto;font:bold 22px monospace;color:#58a6ff;align-self:center}
+.est{font-size:16px;font-weight:600;color:#e6edf3}
+.chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid #30363d;color:#8b949e;margin:4px 4px 0 0}
+.evcat{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8b949e;margin:10px 0 6px}
+.evb .cnt{display:inline-block;min-width:18px;margin-left:6px;padding:0 5px;border-radius:9px;background:#238636;color:#fff;font-size:11px}
+.ib:disabled{opacity:.4;cursor:default}
+.stb.on{border-color:#58a6ff;color:#58a6ff;background:#58a6ff12}
+.kt{width:100%;border-collapse:collapse;font-size:13px}
+.kt td,.kt th{padding:6px 4px;border-bottom:1px solid #21262d;text-align:left}
+.kt th{color:#8b949e;font-weight:500;font-size:11px;letter-spacing:1px;text-transform:uppercase}
+.ok{color:#3fb950}.nok{color:#f85149}
+.lg{font:12px/1.5 monospace;max-height:340px;overflow-y:auto}
+.lg div{padding:2px 0;border-bottom:1px solid #161b22}
+.lg .k-evento{color:#58a6ff}.lg .k-estado{color:#d2a8ff}.lg .k-resposta{color:#e3b341}
+.lg .k-manual{color:#ffa657}.lg .k-comentario{color:#7ee787}.lg .k-sistema{color:#8b949e}
+.cmt{display:flex;gap:6px;margin-top:8px}
+.cmt input{flex:1;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:6px 10px;color:#c9d1d9;font-size:13px}
 @media(max-width:380px){.lg-big{font-size:38px}.clk{font-size:14px}}
 </style>
 </head>
@@ -229,6 +250,8 @@ pre{font-size:11px;color:#8b949e;white-space:pre-wrap;font-family:monospace}
     <button class="tab on"  onclick="swTab(this,'ce2')">Cenários</button>
     <button class="tab"     onclick="swTab(this,'ri2')">Ritmo</button>
     <button class="tab"     onclick="swTab(this,'vi2')">Vitais</button>
+    <button class="tab"     onclick="swTab(this,'ro2')">Roteiro</button>
+    <button class="tab"     onclick="swTab(this,'db2')">Debriefing</button>
     <button class="tab"     onclick="swTab(this,'in2')">Info</button>
   </div>
   <div class="body">
@@ -250,6 +273,60 @@ pre{font-size:11px;color:#8b949e;white-space:pre-wrap;font-family:monospace}
         <div class="bpg">
           <div><div class="bpl">PAS (mmHg)</div><input class="bpi" id="isbp" type="number" min="0" max="220" value="120" oninput="onBP('sbp',this.value)"/></div>
           <div><div class="bpl">PAD (mmHg)</div><input class="bpi" id="idbp" type="number" min="0" max="140" value="80"  oninput="onBP('dbp',this.value)"/></div>
+        </div>
+      </div>
+    </div>
+    <div class="pane"    id="p-ro2">
+      <div class="ic" style="border:1px solid #58a6ff30">
+        <div class="ict" style="color:#58a6ff">Modo automático · cenário programado</div>
+        <select id="scsel" class="sel" onchange="engLoad(this.value)"></select>
+        <div id="scsum" class="muted"></div>
+        <div class="qa" style="margin-top:12px">
+          <button class="ib" id="bstart" onclick="engStart()">▶ Iniciar</button>
+          <button class="ib" id="bpause" onclick="engPause()">⏸ Pausar</button>
+          <button class="ib" onclick="engReset()">↺ Reiniciar</button>
+          <span class="eclk" id="eclock">00:00</span>
+        </div>
+      </div>
+      <div class="ic" style="border:1px solid #d2a8ff30">
+        <div class="ict" style="color:#d2a8ff">Estado do paciente</div>
+        <div class="est" id="estate">—</div>
+        <div class="muted" id="ehint"></div>
+        <div id="etrends"></div>
+      </div>
+      <div class="ic" style="border:1px solid #23863640">
+        <div class="ict" style="color:#3fb950">Intervenções da equipe · toque para registrar</div>
+        <div id="evgrid"><div class="muted">Inicie o cenário para registrar intervenções.</div></div>
+      </div>
+      <div class="ic" style="border:1px solid #21262d">
+        <div class="ict" style="color:#8b949e">Objetivos de aprendizagem</div>
+        <ul id="eobj" class="ib2" style="padding-left:18px"></ul>
+      </div>
+      <div class="ic" style="border:1px solid #21262d">
+        <div class="ict" style="color:#8b949e">Ir para estado (controle do instrutor)</div>
+        <div class="qa" id="stgrid"></div>
+      </div>
+    </div>
+    <div class="pane"    id="p-db2">
+      <div class="ic" style="border:1px solid #58a6ff30">
+        <div class="ict" style="color:#58a6ff">Indicadores de desempenho</div>
+        <div id="dbhead" class="muted" style="margin-top:0"></div>
+        <table class="kt" id="kpis"></table>
+      </div>
+      <div class="ic" style="border:1px solid #d2a8ff30">
+        <div class="ict" style="color:#d2a8ff">Trajetória de estados</div>
+        <div id="epath"></div>
+      </div>
+      <div class="ic" style="border:1px solid #21262d">
+        <div class="ict" style="color:#8b949e">Registro de eventos</div>
+        <div class="lg" id="elog"></div>
+        <div class="cmt">
+          <input id="ecmt" placeholder="Comentário do instrutor (Enter)" maxlength="500"/>
+          <button class="ib" onclick="engComment()">＋</button>
+        </div>
+        <div class="qa" style="margin-top:10px">
+          <button class="ib" onclick="engExport('csv')">⬇ Exportar CSV</button>
+          <button class="ib" onclick="engExport('json')">⬇ Exportar JSON</button>
         </div>
       </div>
     </div>
@@ -279,6 +356,8 @@ pre{font-size:11px;color:#8b949e;white-space:pre-wrap;font-family:monospace}
   </div>
 </div>
 
+<script src="sim-engine.js"></script>
+<script src="scenarios.js"></script>
 <script>
 // ════════════════════════════════════════════════════════
 // DATA
@@ -292,6 +371,7 @@ const RHYTHMS=[
   {id:"svt",         label:"TSVP",                    color:"#ea80fc",defHR:182},
   {id:"bav1",        label:"BAV 1° Grau",             color:"#40c4ff",defHR:62 },
   {id:"vt",          label:"Taquicardia Ventricular",  color:"#ff1744",defHR:168},
+  {id:"vf",          label:"Fibrilação Ventricular",   color:"#ff1744",defHR:0  },
   {id:"aesp",        label:"AESP",                    color:"#90a4ae",defHR:0  },
   {id:"asystole",    label:"Assistolia",              color:"#546e7a",defHR:0  },
 ];
@@ -312,11 +392,15 @@ const SCENARIOS=[
 // WAVEFORM ENGINE
 // ════════════════════════════════════════════════════════
 const SR=200,BL=SR*5;
+// Ritmos sem pulso: sem FC exibida, sem bip e com alarme
+const PULSELESS=["asystole","aesp","vf"];
+const noPulse=rh=>PULSELESS.includes(rh);
 const G=(t,u,s,a)=>a*Math.exp(-.5*((t-u)/s)**2);
 function mkBeat(rh,hr){
   let n=Math.round(SR*60/Math.max(hr,1));
   if(rh==="afib")n=Math.round(n*(.78+Math.random()*.44));
-  if(rh==="asystole"||rh==="aesp")n=(SR*1.5)|0;
+  if(noPulse(rh))n=(SR*1.5)|0;
+  const ph=Math.random()*6.283;
   n=Math.max(n,25);
   const s=new Float32Array(n);
   for(let i=0;i<n;i++){
@@ -330,6 +414,7 @@ function mkBeat(rh,hr){
       case"flutter":{const p=(t*3.5)%1;s[i]=.22*(p<.6?-p/.6:(p-.6)/.4)+G(t,.34,.010,.82)+G(t,.37,.008,-.20);break;}
       case"vt":s[i]=G(t,.18,.055,-.3)+G(t,.30,.072,1.12)+G(t,.47,.060,-.52)+G(t,.63,.052,.32)+.08;break;
       case"svt":s[i]=G(t,.28,.008,-.08)+G(t,.30,.010,1)+G(t,.32,.008,-.20)+G(t,.46,.025,.14)+G(t,.61,.014,-.07);break;
+      case"vf":{const ts=i/SR;s[i]=(Math.sin(6.283*5.3*ts+ph)*.34+Math.sin(6.283*8.1*ts+ph*1.7)*.18)*(.55+.45*Math.sin(6.283*.6*ts+ph));break;}
       case"aesp":s[i]=(t<.028?G(t,.014,.006,.38):0)+(Math.random()-.5)*.012;break;
       default:s[i]=(Math.random()-.5)*.014;
     }
@@ -387,7 +472,7 @@ function loop(now){
     if(n2){CVS.s.buf.copyWithin(0,n2);for(let i=BL-n2;i<BL;i++)CVS.s.buf[i]=SE.next();}
     if(n3){CVS.r.buf.copyWithin(0,n3);for(let i=BL-n3;i<BL;i++)CVS.r.buf[i]=rNext();}
   }
-  const flat=ST.rhythm==="asystole"||ST.rhythm==="aesp";
+  const flat=noPulse(ST.rhythm);
   const rh=RHYTHMS.find(r=>r.id===ST.rhythm)||RHYTHMS[0];
   const alHR=ST.alarms&&(flat||ST.hr<45||ST.hr>150);
   const alSP=ST.alarms&&ST.spo2>0&&ST.spo2<90;
@@ -457,7 +542,7 @@ function beep(freq=880,dur=0.08,vol=0.35,type="sine"){
 function startBeepLoop(){
   stopBeepLoop();
   function tick(){
-    const flat=ST.rhythm==="asystole"||ST.rhythm==="aesp";
+    const flat=noPulse(ST.rhythm);
     const hr=(!flat&&ST.hr>0)?ST.hr:null;
     if(hr){
       beep(880,0.07,0.3,"sine");          // bip principal
@@ -495,12 +580,12 @@ let ROLE="",ROOM="";
 
 function render(patch){
   if(patch)Object.assign(ST,patch);
-  const flat=ST.rhythm==="asystole"||ST.rhythm==="aesp";
+  const flat=noPulse(ST.rhythm);
   const rh=RHYTHMS.find(r=>r.id===ST.rhythm)||RHYTHMS[0];
   const alHR=ST.alarms&&(flat||ST.hr<45||ST.hr>150);
   const alSP=ST.alarms&&ST.spo2>0&&ST.spo2<90;
   const alBP=ST.alarms&&ST.sbp>0&&(ST.sbp<80||ST.sbp>180);
-  EE.cfg(ST.rhythm,ST.hr,ST.spo2);SE.cfg(ST.rhythm,ST.hr,ST.spo2);
+  EE.cfg(ST.rhythm,ST.hr,ST.spo2);SE.cfg(ST.rhythm,ST.hr,flat?0:ST.spo2); // sem pulso → pletismografia plana
 
   if(ROLE==="monitor"){
     $("mrh").textContent=rh.label;$("mrh").style.color=rh.color;
@@ -573,7 +658,9 @@ function connect(room,role,onOpen){
   ws.onerror=()=>{};
 }
 
-function push(patch){
+function push(patch,fromEngine){
+  // Modo manual sobre o automático: ajustes do instrutor viram "override" no motor
+  if(!fromEngine&&patch&&ENG&&ENG.started&&!ENG.finished)ENG.override(patch);
   render(patch);
   if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:"state",state:ST}));
 }
@@ -601,14 +688,14 @@ function enter(role){
     connect(room,"monitor",null);
   }else{
     $("irl").textContent="SALA "+room;$("icode").textContent=room;
-    show("s2");buildSc();buildRh();render(null);
+    show("s2");buildSc();buildRh();buildScSel();render(null);
     connect(room,"instructor",()=>{});
   }
 }
 
 function goBack(){
   if(raf){cancelAnimationFrame(raf);raf=null;}
-  stopBeepLoop(); stopAlarm();
+  stopBeepLoop(); stopAlarm(); stopEngTimer();
   if(ws){try{ws.close();}catch(e){}}ws=null;
   show("s0");
 }
@@ -642,6 +729,105 @@ function buildRh(){
   });
 }
 
+// ════════════════════════════════════════════════════════
+// MOTOR DE CENÁRIOS – modo automático (estados, tendências, handlers) + debriefing
+// ════════════════════════════════════════════════════════
+let ENG=null,engTimer=null,engLast=0,engRenderQ=false;
+const esc=t=>String(t??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const engVitals=()=>{const v={};SimEngine.VITAL_KEYS.forEach(k=>v[k]=ENG.vitals[k]);return v;};
+
+function buildScSel(){
+  const s=$("scsel");if(s.options.length)return;
+  SCENARIO_PROGRAMS.forEach(p=>{const o=document.createElement("option");o.value=p.id;o.textContent=p.title;s.appendChild(o);});
+  engLoad(s.value);
+}
+function engLoad(id){
+  stopEngTimer();
+  const sc=SCENARIO_PROGRAMS.find(p=>p.id===id);if(!sc)return;
+  ENG=new SimEngine.ScenarioEngine(sc,{onLog:schedEngRender});
+  renderEng();
+}
+function engStart(){
+  if(!ENG)return;
+  if(!ENG.started)ENG.start();else ENG.resume();
+  push(engVitals(),true);startEngTimer();renderEng();
+}
+function engPause(){if(ENG){ENG.pause();stopEngTimer();renderEng();}}
+function engReset(){if(ENG)engLoad(ENG.sc.id);}
+function startEngTimer(){
+  stopEngTimer();engLast=performance.now();
+  engTimer=setInterval(()=>{
+    const now=performance.now(),dt=(now-engLast)/1000;engLast=now;
+    if(!ENG||ST.frozen)return;            // congelar pausa também o relógio do cenário
+    if(ENG.tick(dt))push(engVitals(),true);
+    if(ENG.finished)stopEngTimer();
+    renderEngLive();
+  },500);
+}
+function stopEngTimer(){if(engTimer){clearInterval(engTimer);engTimer=null;}}
+function engEvent(id){
+  if(!ENG||!ENG.started||ENG.finished)return;
+  ENG.registerEvent(id);push(engVitals(),true);renderEng();
+}
+function engGoto(id){
+  if(!ENG)return;
+  ENG.gotoState(id);push(engVitals(),true);
+  if(!ENG.finished&&ENG.running)startEngTimer();
+  renderEng();
+}
+function engComment(){const i=$("ecmt");if(ENG&&i.value.trim()){ENG.comment(i.value);i.value="";}}
+function engExport(fmt){
+  if(!ENG||!ENG.log.length)return;
+  const data=fmt==="csv"?"\ufeff"+ENG.exportCSV():ENG.exportJSON();
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([data],{type:fmt==="csv"?"text/csv":"application/json"}));
+  a.download=`simclin_${ENG.sc.id}_sala${ROOM}_${new Date().toISOString().slice(0,16).replace(/[:T]/g,"-")}.${fmt}`;
+  a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function schedEngRender(){if(engRenderQ)return;engRenderQ=true;setTimeout(()=>{engRenderQ=false;renderEng();},0);}
+
+function renderEngLive(){
+  if(!ENG)return;
+  const st=ENG.state;
+  $("eclock").textContent=SimEngine.fmtClock(ENG.t);
+  $("estate").textContent=st?st.label:"Aguardando início";
+  $("ehint").textContent=st&&st.hint?st.hint:(ENG.finished?"Cenário finalizado. Veja a aba Debriefing.":"");
+  const P=SimEngine.PARAMS;
+  $("etrends").innerHTML=Object.entries(ENG.trends).map(([k,t])=>{
+    const left=Math.max(0,t.duration-(ENG.t-t.t0));
+    return `<span class="chip">${P[k].label} → ${t.to} (${SimEngine.fmtClock(left)})</span>`;}).join("")
+    +(st&&st.timeout&&!ENG.finished?`<span class="chip">tempo-limite do estado: ${SimEngine.fmtClock(st.timeout.after-ENG.stateElapsed)}</span>`:"");
+  $("bstart").textContent=ENG.started&&!ENG.finished?"▶ Retomar":"▶ Iniciar";
+  $("bstart").disabled=ENG.running||ENG.finished;$("bpause").disabled=!ENG.running;
+}
+function renderEng(){
+  if(!ENG)return;
+  const sc=ENG.sc;
+  $("scsum").textContent=sc.summary||"";
+  $("eobj").innerHTML=(sc.objectives||[]).map(o=>`<li>${esc(o)}</li>`).join("");
+  // Menu de intervenções agrupado por categoria ("tap to log")
+  if(ENG.started){
+    const cats={};(sc.events||[]).forEach(e=>(cats[e.cat||"Outros"]=cats[e.cat||"Outros"]||[]).push(e));
+    $("evgrid").innerHTML=Object.entries(cats).map(([c,evs])=>`<div class="evcat">${esc(c)}</div><div class="qa">`+
+      evs.map(e=>{const n=ENG.totalCounts[e.id]||0;
+        return `<button class="ib evb" ${ENG.finished?"disabled":""} onclick="engEvent('${e.id}')">${esc(e.label)}${n?`<span class="cnt">${n}</span>`:""}</button>`;}).join("")+`</div>`).join("");
+  }else $("evgrid").innerHTML=`<div class="muted">Inicie o cenário para registrar intervenções.</div>`;
+  $("stgrid").innerHTML=Object.entries(sc.states).map(([id,s])=>
+    `<button class="ib stb${ENG.stateId===id?" on":""}" onclick="engGoto('${id}')">${esc(s.label)}</button>`).join("");
+  // Debriefing
+  const m=ENG.metrics();
+  $("dbhead").textContent=`${m.scenario} · duração ${m.clock}`+(m.outcome?` · desfecho: ${m.outcome}`:"")
+    +(m.kpiAdherence!==null&&ENG.started?` · adesão aos indicadores: ${Math.round(m.kpiAdherence*100)}%`:"");
+  $("kpis").innerHTML=`<tr><th>Indicador</th><th>Meta</th><th>Tempo</th><th></th></tr>`+m.kpis.map(k=>
+    `<tr><td>${esc(k.label)}</td><td>${k.target!==undefined?"≤ "+SimEngine.fmtClock(k.target):"realizar"}</td><td>${k.clock}</td>`+
+    `<td class="${k.met?"ok":"nok"}">${k.met?"✓":(k.time===null?"–":"✗")}</td></tr>`).join("");
+  $("epath").innerHTML=m.path.map(p=>`<span class="chip">${p.clock} · ${esc(p.label)}</span>`).join("")||`<div class="muted">—</div>`;
+  $("elog").innerHTML=ENG.log.slice(-300).reverse().map(e=>
+    `<div class="k-${e.kind}">[${e.clock}] ${esc(e.text)} <span style="color:#484f58">FC ${e.vitals.hr} · SpO₂ ${e.vitals.spo2} · PA ${e.vitals.sbp}/${e.vitals.dbp}</span></div>`).join("");
+  renderEngLive();
+}
+
+$("ecmt").addEventListener("keydown",e=>{if(e.key==="Enter")engComment();});
 $("ri").addEventListener("input",function(){this.value=this.value.replace(/\D/g,"").slice(0,4);$("err").textContent="";});
 $("ri").addEventListener("keydown",e=>{if(e.key==="Enter")enter("monitor");});
 show("s0");
