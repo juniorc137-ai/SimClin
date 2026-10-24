@@ -7,6 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
+  color-scheme:dark;
   --bg:#0b1210;--bg2:#101a17;--card:#13201c;--line:#21352f;--ink:#e3efe9;--mute:#8aa59b;
   --acc:#00c46a;--acc2:#40c4ff;--warn:#ffb300;--bad:#ff4d5e;--chip:#1a2b26;
   --hr:#00e676;--spo:#40c4ff;--bp:#ff9800;
@@ -17,7 +18,7 @@ a{color:var(--acc2)}
 h1{font-size:20px;margin:0 0 14px}
 h2{font-size:15px;margin:0 0 10px;color:var(--ink)}
 h3{font-size:13px;margin:10px 0 6px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
-.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:12px;padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--line);flex-wrap:wrap}
 .brand{font:700 16px var(--mono);letter-spacing:1px;color:var(--acc);text-decoration:none}
 .brand span{color:var(--acc2)}
 .top .sp{flex:1}
@@ -173,6 +174,8 @@ ul.plain li{padding:7px 0;border-bottom:1px solid var(--line)}
   <main id="main"><div class="empty">Carregando…</div></main>
 </div>
 <div id="modal" class="modal" hidden><div class="mbox" id="mbody"></div></div>
+<div id="ask" class="modal" hidden style="z-index:55"><div class="mbox" style="width:min(440px,100%)"><p id="ask-msg"></p>
+  <div class="mact"><button type="button" class="btn ghost" id="ask-no">Cancelar</button><button type="button" class="btn danger" id="ask-yes">Confirmar</button></div></div></div>
 <div id="toast"></div>
 
 <script src="captura-core.js"></script>
@@ -274,8 +277,18 @@ function toast(msg, ms = 3200) {
   const t = $("#toast"); t.textContent = msg; t.style.display = "block";
   clearTimeout(toast.t); toast.t = setTimeout(() => (t.style.display = "none"), ms);
 }
+// No visualizador de Artifacts, links de download são bloqueados: usa a capacidade "downloads".
+let DOWNLOADS = null;
+try { if (window.claude && window.claude.use) window.claude.use("downloads").then((d) => { DOWNLOADS = d; }).catch(() => {}); } catch (e) {}
 function download(name, data, type = "text/plain;charset=utf-8") {
-  const b = data instanceof Blob ? data : new Blob([type.includes("csv") ? "﻿" + data : data], { type });
+  const b = data instanceof Blob ? data : new Blob([type.includes("csv") ? "\uFEFF" + data : data], { type });
+  if (DOWNLOADS) {
+    DOWNLOADS.save({ filename: name, data: b }).catch((e) => {
+      if (e && e.code === "declined") return;
+      toast(e && e.code === "rejected_extension" ? "Este formato não pode ser baixado nesta versão; use o arquivo HTML." : "Download indisponível aqui: " + ((e && e.message) || "erro"));
+    });
+    return;
+  }
   const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 10000);
@@ -310,6 +323,15 @@ function render() {
   $("#me-wrap").style.display = pool.length ? "" : "none";
   $("#main").innerHTML = R[UI.view]();
   if (AFTER[UI.view]) AFTER[UI.view]();
+}
+
+// ── Confirmação na própria página (confirm() é bloqueado em alguns visualizadores) ──
+function ask(msg, yes = "Confirmar") {
+  return new Promise((res) => {
+    const box = $("#ask"); $("#ask-msg").textContent = msg; $("#ask-yes").textContent = yes; box.hidden = false; $("#ask-no").focus();
+    const done = (v) => { box.hidden = true; $("#ask-yes").onclick = $("#ask-no").onclick = null; ask.close = null; res(v); };
+    $("#ask-yes").onclick = () => done(true); $("#ask-no").onclick = () => done(false); ask.close = () => done(false);
+  });
 }
 
 // ── Modal ────────────────────────────────────────────────────────────────
@@ -811,7 +833,7 @@ function liveTick() {
   if (t - LIVE.lastDraft > 5) { LIVE.lastDraft = t; ses.duration = t; kvPut("draft", ses).catch(() => {}); }
 }
 async function recStop() {
-  if (!confirm("Encerrar a gravação e abrir o debriefing?")) return;
+  if (!(await ask("Encerrar a gravação e abrir o debriefing?"))) return;
   clearInterval(LIVE.timer); stopTranscript();
   const ses = LIVE.session; ses.duration = Math.round(liveT() * 10) / 10;
   toast("Finalizando gravação…");
@@ -1224,8 +1246,8 @@ function seedBasics() {
   DB.resources.push({ id: C.uid("rs"), name: "Manequim adulto de alta fidelidade", kind: "capital" }, { id: C.uid("rs"), name: "Monitor SimClin (tablet)", kind: "capital" },
     { id: C.uid("rs"), name: "Câmera móvel", kind: "capital" }, { id: C.uid("rs"), name: "Kit de acesso venoso", kind: "consumivel" });
 }
-function loadDemo() {
-  if (DB.sessions.length && !confirm("Acrescentar os dados de exemplo aos dados existentes?")) return;
+async function loadDemo() {
+  if (DB.sessions.length && !(await ask("Acrescentar os dados de exemplo aos dados existentes?"))) return;
   if (!DB.locations.length) seedBasics();
   const P = (name, role) => { const p = { id: C.uid("p"), name, email: name.toLowerCase().normalize("NFD").replace(/[^a-z ]/g, "").trim().replace(/\s+/g, ".") + "@exemplo.edu.br", role }; DB.people.push(p); return p; };
   const st = ["Ana Souza", "Bruno Lima", "Carla Mendes", "Diego Rocha", "Elisa Prado"].map((n) => P(n, "estudante"));
@@ -1303,7 +1325,7 @@ const ACT = {
   "ag-mon": (b) => { const d = +b.dataset.d, m = new Date(UI.agMonth); UI.agMonth = d ? +new Date(m.getFullYear(), m.getMonth() + d, 1) : Date.now(); render(); },
   "res-open": (b, e) => { e.stopPropagation(); const r = byId("reservations", b.dataset.id); if (r) openReservation(r, +b.dataset.idx); },
   "res-status": (b) => { const r = byId("reservations", b.dataset.id); if (r) { r.status = b.dataset.s; save(); render(); } },
-  "res-del": (b) => {
+  "res-del": async (b) => {
     const r = byId("reservations", b.dataset.id); if (!r) return;
     if (b.dataset.idx !== undefined && +b.dataset.idx > 0) { r.recur.skip = [...(r.recur.skip || []), +b.dataset.idx]; }
     else if (b.dataset.idx !== undefined) { // 1ª ocorrência da série: a série passa a começar na seguinte
@@ -1311,7 +1333,7 @@ const ACT = {
       if (nx) { const dur = +new Date(r.end) - +new Date(r.start); r.start = new Date(nx.start).toISOString(); r.end = new Date(nx.start + dur).toISOString(); r.recur.skip = (r.recur.skip || []).map((i) => i - nx.index).filter((i) => i > 0); }
       else DB.reservations = DB.reservations.filter((x) => x !== r);
     }
-    else { if (!confirm("Excluir a reserva" + (r.recur && r.recur.freq !== "nenhuma" ? " e todas as ocorrências" : "") + "?")) return; DB.reservations = DB.reservations.filter((x) => x !== r); }
+    else { if (!(await ask("Excluir a reserva" + (r.recur && r.recur.freq !== "nenhuma" ? " e todas as ocorrências" : "") + "?"))) return; DB.reservations = DB.reservations.filter((x) => x !== r); }
     save(); closeModal(); render();
   },
   "ics": () => {
@@ -1328,22 +1350,22 @@ const ACT = {
   // cursos e pessoas
   "course-new": () => openCourse({ id: C.uid("c"), participantIds: [], facultyIds: [] }),
   "course-open": (b) => openCourse(byId("courses", b.dataset.id)),
-  "course-del": (b) => { if (!confirm("Excluir o curso? As sessões permanecem.")) return; DB.courses = DB.courses.filter((c) => c.id !== b.dataset.id); save(); closeModal(); render(); },
+  "course-del": async (b) => { if (!(await ask("Excluir o curso? As sessões permanecem."))) return; DB.courses = DB.courses.filter((c) => c.id !== b.dataset.id); save(); closeModal(); render(); },
   "person-new": () => openPerson({ id: C.uid("p"), role: "estudante" }),
   "person-open": (b) => openPerson(byId("people", b.dataset.id)),
-  "person-del": (b) => { if (!confirm("Excluir esta pessoa?")) return; const id = b.dataset.id; DB.people = DB.people.filter((p) => p.id !== id); DB.courses.forEach((c) => { c.participantIds = (c.participantIds || []).filter((x) => x !== id); c.facultyIds = (c.facultyIds || []).filter((x) => x !== id); }); save(); closeModal(); render(); },
+  "person-del": async (b) => { if (!(await ask("Excluir esta pessoa?"))) return; const id = b.dataset.id; DB.people = DB.people.filter((p) => p.id !== id); DB.courses.forEach((c) => { c.participantIds = (c.participantIds || []).filter((x) => x !== id); c.facultyIds = (c.facultyIds || []).filter((x) => x !== id); }); save(); closeModal(); render(); },
   "people-csv": () => download("participantes.csv", C.toCSV(DB.people.map((p) => ({ nome: p.name, email: p.email, papel: p.role, cursos: DB.courses.filter((c) => [...(c.participantIds || []), ...(c.facultyIds || [])].includes(p.id)).map((c) => c.code || c.title).join(", ") }))), "text/csv;charset=utf-8"),
   // cenários
   "sc-new": () => openScenario({ id: C.uid("sc"), annotations: CRM_MARKERS.map(([label, cat]) => ({ id: C.uid("a"), label, cat, color: colorFor(cat) })), evaluationIds: [] }),
   "sc-open": (b) => openScenario(byId("scenarios", b.dataset.id)),
   "sc-import": () => importEngineScenarios(),
   "sc-copy": (b) => { const s = byId("scenarios", b.dataset.id); const c = JSON.parse(JSON.stringify(s)); c.id = C.uid("sc"); c.title += " (cópia)"; delete c.engineId; DB.scenarios.push(c); save(); closeModal(); render(); },
-  "sc-del": (b) => { if (!confirm("Excluir o cenário?")) return; DB.scenarios = DB.scenarios.filter((s) => s.id !== b.dataset.id); save(); closeModal(); render(); },
+  "sc-del": async (b) => { if (!(await ask("Excluir o cenário?"))) return; DB.scenarios = DB.scenarios.filter((s) => s.id !== b.dataset.id); save(); closeModal(); render(); },
   // avaliações
   "ev-new": () => openEvaluation({ id: C.uid("ev"), type: "avaliador", items: [] }),
   "ev-open": (b, e) => { if (e.target.closest("[data-act=ev-print]")) return; openEvaluation(byId("evaluations", b.dataset.id)); },
   "ev-print": (b, e) => { e.stopPropagation(); printEvaluation(byId("evaluations", b.dataset.id)); },
-  "ev-del": (b) => { if (!confirm("Excluir a avaliação? Resultados já registrados deixarão de ser pontuados.")) return; DB.evaluations = DB.evaluations.filter((x) => x.id !== b.dataset.id); DB.scenarios.forEach((s) => (s.evaluationIds = (s.evaluationIds || []).filter((x) => x !== b.dataset.id))); save(); closeModal(); render(); },
+  "ev-del": async (b) => { if (!(await ask("Excluir a avaliação? Resultados já registrados deixarão de ser pontuados."))) return; DB.evaluations = DB.evaluations.filter((x) => x.id !== b.dataset.id); DB.scenarios.forEach((s) => (s.evaluationIds = (s.evaluationIds || []).filter((x) => x !== b.dataset.id))); save(); closeModal(); render(); },
   "item-add": () => $("#items").insertAdjacentHTML("beforeend", itemRow({})),
   "item-del": (b) => b.closest(".it").remove(),
   // ao vivo
@@ -1359,10 +1381,10 @@ const ACT = {
   "ltab": (b) => { $$(".tabs button", b.parentElement.parentElement).forEach((x) => x.classList.toggle("on", x === b)); $$(".tp").forEach((p) => p.classList.toggle("on", p.id === "lt-" + b.dataset.t)); if (b.dataset.t === "tr") renderTr(); },
   "ann-pre": (b) => { const a = annLib(LIVE.session)[+b.dataset.i]; if (a) addAnn({ label: a.label, cat: a.cat, color: a.color, source: "pre" }); },
   "ann-free": () => { const i = $("#ann-text"); const v = i.value.trim(); if (v) { addAnn({ label: v, cat: "Anotação livre", source: "manual" }); i.value = ""; } },
-  "ann-del": (b, e) => {
+  "ann-del": async (b, e) => {
     e.stopPropagation();
     const s = LIVE.recording ? LIVE.session : byId("sessions", UI.sel); if (!s) return;
-    if (!LIVE.recording && !confirm("Excluir esta anotação?")) return;
+    if (!LIVE.recording && !(await ask("Excluir esta anotação?"))) return;
     s.annotations = s.annotations.filter((a) => a.id !== b.dataset.id);
     if (LIVE.recording) renderLiveLog(); else { save(); renderEvList(); updatePBUI(true); }
   },
@@ -1381,15 +1403,15 @@ const ACT = {
     const sc = C.scoreEvaluation(ev, r.answers);
     modal(`${ev.title} — ${r.subjectId === "equipe" ? "Equipe" : nameOf("people", r.subjectId)}`, `<p><b>${sc.points}/${sc.max} pontos (${sc.pct ?? "—"}%)</b> · ${esc(r.evaluator || "")} · ${fmtDT(r.submittedAt)}${r.t !== undefined ? ` · <a href="#" data-act="pb-seek" data-t="${r.t}">ir para ${C.fmtClock(r.t)}</a>` : ""}</p>
       ${sc.criticalMissed.length ? `<div class="conf">Itens críticos não cumpridos: ${sc.criticalMissed.map(esc).join("; ")}</div>` : ""}${evalFormHtml(ev, r.answers, true)}`,
-      { extra: `<button type="button" class="btn" data-act="res-print" data-id="${r.id}">Imprimir</button>${canEdit() ? `<button type="button" class="btn" data-act="res-del" data-id="${r.id}">Excluir</button>` : ""}` }); },
+      { extra: `<button type="button" class="btn" data-act="res-print" data-id="${r.id}">Imprimir</button>${canEdit() ? `<button type="button" class="btn" data-act="result-del" data-id="${r.id}">Excluir</button>` : ""}` }); },
   "res-print": (b) => { const s = byId("sessions", UI.sel); const r = s.results.find((x) => x.id === b.dataset.id); const ev = byId("evaluations", r.evaluationId);
     printEvaluation(ev, r.answers, ` · ${esc(s.title)} · ${esc(r.subjectId === "equipe" ? "Equipe" : nameOf("people", r.subjectId))} · ${esc(r.evaluator || "")}`); },
-  "res-del": (b) => { if (!confirm("Excluir este resultado?")) return; const s = byId("sessions", UI.sel); s.results = s.results.filter((x) => x.id !== b.dataset.id); save(); closeModal(); $("#vtab").innerHTML = vtabHtml(s); renderEvList(); },
+  "result-del": async (b) => { if (!(await ask("Excluir este resultado?"))) return; const s = byId("sessions", UI.sel); s.results = s.results.filter((x) => x.id !== b.dataset.id); save(); closeModal(); $("#vtab").innerHTML = vtabHtml(s); renderEvList(); },
   "dl-media": (b) => { const s = byId("sessions", UI.sel), m = s.media[+b.dataset.i]; getChunks(m.id).then((ch) => { if (!ch.length) return toast("Vídeo indisponível."); const ext = /mp4/.test(m.mime) ? "mp4" : "webm"; download(`${s.title} - ${m.label}.${ext}`.replace(/[\\/:*?"<>|]/g, "_"), new Blob(ch, { type: m.mime.split(";")[0] })); }); },
   "ses-csv": () => { const s = byId("sessions", UI.sel); download(`${s.title}.csv`.replace(/[\\/:*?"<>|]/g, "_"), sessionCSV(s), "text/csv;charset=utf-8"); },
   "ses-json": () => { const s = byId("sessions", UI.sel); download(`${s.title}.json`.replace(/[\\/:*?"<>|]/g, "_"), JSON.stringify({ session: s, scenario: byId("scenarios", s.scenarioId), evaluations: (s.results || []).map((r) => byId("evaluations", r.evaluationId)).filter((v, i, a) => v && a.indexOf(v) === i) }, null, 2), "application/json"); },
   "ses-print": () => printSession(byId("sessions", UI.sel)),
-  "ses-del": async () => { const s = byId("sessions", UI.sel); if (!confirm("Excluir a sessão, seus vídeos, anotações e avaliações? Esta ação não pode ser desfeita.")) return;
+  "ses-del": async () => { const s = byId("sessions", UI.sel); if (!(await ask("Excluir a sessão, seus vídeos, anotações e avaliações? Esta ação não pode ser desfeita."))) return;
     teardownPB(); for (const m of s.media || []) { try { await delMedia(m.id); } catch (e) {} } DB.sessions = DB.sessions.filter((x) => x !== s); save(); go("sessoes"); },
   "ses-edit": () => { const s = byId("sessions", UI.sel);
     modal("Editar dados da sessão", `<label class="f"><span>Título</span><input name="title" value="${esc(s.title)}"></label><div class="fg"><label class="f"><span>Curso</span><select name="courseId">${opts("courses", s.courseId)}</select></label>
@@ -1409,14 +1431,14 @@ const ACT = {
   "retention": () => applyRetention(false),
   "persist": async () => { try { const ok = navigator.storage && navigator.storage.persist ? await navigator.storage.persist() : false; toast(ok ? "Armazenamento persistente concedido." : "O navegador não concedeu armazenamento persistente."); render(); } catch (e) { toast(e.message); } },
   "backup": () => download(`simclin-captura-backup-${isoDate(Date.now())}.json`, JSON.stringify(DB, null, 1), "application/json"),
-  "wipe": async () => { if (!confirm("Apagar TODOS os dados e vídeos deste navegador?") || !confirm("Confirma? Não há como desfazer.")) return;
+  "wipe": async () => { if (!(await ask("Apagar TODOS os dados e vídeos deste navegador?")) || !(await ask("Confirma? Não há como desfazer."))) return;
     if (USE_MEM) { MEM.kv.clear(); MEM.media.clear(); } else { await tx("media", "readwrite", (s) => s.clear()); await kvDel("db"); }
     DB = emptyDB(); seedBasics(); save(); render(); toast("Dados apagados."); },
   "loc-new": () => modal("Nova sala", `<label class="f"><span>Nome</span><input name="name" required></label>`, { onSubmit: (fd) => { const n = fd.get("name").trim(); if (!n) return false; DB.locations.push({ id: C.uid("l"), name: n }); save(); render(); } }),
-  "loc-del": (b) => { if (!confirm("Remover a sala?")) return; DB.locations = DB.locations.filter((x) => x.id !== b.dataset.id); save(); render(); },
+  "loc-del": async (b) => { if (!(await ask("Remover a sala?"))) return; DB.locations = DB.locations.filter((x) => x.id !== b.dataset.id); save(); render(); },
   "resrc-new": () => modal("Novo recurso", `<label class="f"><span>Nome</span><input name="name" required></label><label class="f"><span>Tipo</span><select name="kind">${opt("capital", "Permanente (simulador, câmera, monitor)")}${opt("consumivel", "Insumo (consumível)")}</select></label>`,
     { onSubmit: (fd) => { const n = fd.get("name").trim(); if (!n) return false; DB.resources.push({ id: C.uid("rs"), name: n, kind: fd.get("kind") }); save(); render(); } }),
-  "resrc-del": (b) => { if (!confirm("Remover o recurso?")) return; DB.resources = DB.resources.filter((x) => x.id !== b.dataset.id); save(); render(); },
+  "resrc-del": async (b) => { if (!(await ask("Remover o recurso?"))) return; DB.resources = DB.resources.filter((x) => x.id !== b.dataset.id); save(); render(); },
 };
 // "res-new" atende à agenda/painel (nova reserva) e ao visualizador (novo resultado)
 ACT["res-new"] = (b, e) => {
@@ -1443,7 +1465,7 @@ const CHG = {
   "rep-eval": (el) => { UI.repEval = el.value; render(); },
   "set": (el) => { DB.settings[el.name] = el.type === "number" ? +el.value || 0 : el.value.trim(); save(); },
   "roster": (el) => { const f = el.files[0]; if (f) f.text().then(importRoster); el.value = ""; },
-  "restore": (el) => { const f = el.files[0]; if (!f) return; f.text().then((t) => { try { const d = JSON.parse(t); if (!d || !Array.isArray(d.sessions)) throw new Error("arquivo inválido"); if (!confirm("Substituir os dados atuais pelo backup?")) return; DB = Object.assign(emptyDB(), d); save(); render(); toast("Backup restaurado."); } catch (e) { toast("Não foi possível restaurar: " + e.message); } }); el.value = ""; },
+  "restore": (el) => { const f = el.files[0]; if (!f) return; f.text().then(async (t) => { try { const d = JSON.parse(t); if (!d || !Array.isArray(d.sessions)) throw new Error("arquivo inválido"); if (!(await ask("Substituir os dados atuais pelo backup?"))) return; DB = Object.assign(emptyDB(), d); save(); render(); toast("Backup restaurado."); } catch (e) { toast("Não foi possível restaurar: " + e.message); } }); el.value = ""; },
 };
 
 document.addEventListener("click", (e) => {
@@ -1455,6 +1477,7 @@ document.addEventListener("click", (e) => {
 document.addEventListener("change", (e) => { const el = e.target.closest("[data-change]"); if (el && CHG[el.dataset.change]) CHG[el.dataset.change](el); });
 document.addEventListener("keydown", (e) => {
   const typing = /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) && e.target.type !== "checkbox" && e.target.type !== "radio";
+  if (!$("#ask").hidden) { if (e.key === "Escape" && ask.close) ask.close(); return; }
   if (e.key === "Escape" && !$("#modal").hidden) return closeModal();
   if (!$("#modal").hidden) return;
   if (LIVE.recording) {
