@@ -38,6 +38,8 @@ html,body{height:100%;overflow:hidden;background:#030a03}
 .lb.m:active{background:#091e0c}
 .lb.ins{border:1px solid var(--spo);color:var(--spo);box-shadow:0 0 12px #40c4ff18}
 .lb.ins:active{background:#001520}
+.lb.cap{display:block;margin-top:10px;border:1px solid #ff9800;color:#ff9800;text-decoration:none;box-shadow:0 0 12px #ff980018}
+.lb.cap:active{background:#1a1000}
 .hint{margin-top:12px;padding:10px;background:var(--bg);border-radius:6px;border:1px solid #081608}
 .ht{font:9px var(--mono);letter-spacing:1px;color:#003d18;margin-bottom:3px}
 .hb{font-size:11px;color:#003016;line-height:1.6}
@@ -169,6 +171,7 @@ pre{font-size:11px;color:#8b949e;white-space:pre-wrap;font-family:monospace}
         <button class="lb m"   onclick="enter('monitor')">📟 MONITOR</button>
         <button class="lb ins" onclick="enter('instructor')">🎛️ INSTRUTOR</button>
       </div>
+      <a class="lb cap" href="captura.html">🎥 CAPTURA · AGENDA · DEBRIEFING</a>
       <div class="hint">
         <div class="ht">COMO FUNCIONA</div>
         <div class="hb">Instrutor abre → cria código de sala → Monitor abre em outro dispositivo com o mesmo código → sincronização automática via WebSocket ✓</div>
@@ -744,7 +747,7 @@ function buildScSel(){
 function engLoad(id){
   stopEngTimer();
   const sc=SCENARIO_PROGRAMS.find(p=>p.id===id);if(!sc)return;
-  ENG=new SimEngine.ScenarioEngine(sc,{onLog:schedEngRender});
+  ENG=new SimEngine.ScenarioEngine(sc,{onLog:engOnLog});
   renderEng();
 }
 function engStart(){
@@ -783,6 +786,11 @@ function engExport(fmt){
   a.href=URL.createObjectURL(new Blob([data],{type:fmt==="csv"?"text/csv":"application/json"}));
   a.download=`simclin_${ENG.sc.id}_sala${ROOM}_${new Date().toISOString().slice(0,16).replace(/[:T]/g,"-")}.${fmt}`;
   a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+// Cada registro do roteiro também vai para a sala (estações de captura o põem na linha do tempo)
+function engOnLog(entry){
+  schedEngRender();
+  if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:"event",entry:{t:entry.t,kind:entry.kind,text:entry.text,state:entry.state}}));
 }
 function schedEngRender(){if(engRenderQ)return;engRenderQ=true;setTimeout(()=>{engRenderQ=false;renderEng();},0);}
 

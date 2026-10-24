@@ -58,6 +58,16 @@ wss.on("connection", (ws) => {
       return;
     }
 
+    // ── EVENTO DO ROTEIRO (instrutor → monitores e estações de captura) ──
+    // Não fica guardado na sala: só interessa a quem está gravando naquele momento.
+    if (msg.type === "event" && wsRole === "instructor" && wsRoom && msg.entry) {
+      const r = rooms.get(wsRoom);
+      if (!r) return;
+      const out = JSON.stringify({ type: "event", entry: msg.entry });
+      r.monitors.forEach((m) => { if (m.readyState === 1) m.send(out); });
+      return;
+    }
+
     // ── STATE UPDATE (instrutor → monitores) ──
     if (msg.type === "state" && wsRole === "instructor" && wsRoom) {
       const r = rooms.get(wsRoom);

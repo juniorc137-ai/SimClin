@@ -18,6 +18,8 @@ npm test         # testes do motor de cenários (node:test, sem dependências ex
 | Aplicação do instrutor | `public/index.html` (tela *Instrutor*) | Modo manual (cenários rápidos, ritmo, vitais) e modo automático (*Roteiro*) |
 | Motor de cenários | `public/sim-engine.js` | Máquina de estados com tendências, eventos, *handlers*, gatilhos e registro de sessão |
 | Biblioteca de cenários | `public/scenarios.js` | Cenários programados (sepse, FA com RVR, PCR em FV) |
+| Captura e debriefing | `public/captura.html` | Agenda, gravação multicâmera, anotações, debriefing, avaliações e relatórios |
+| Regras da captura | `public/captura-core.js` | Recorrência e conflitos de agenda, pontuação, amostragem, relatórios, CSV/iCalendar |
 
 ### Motor de cenários (modo automático)
 
@@ -71,3 +73,28 @@ teste em `test/engine.test.js` cobrindo o caminho ideal e o caminho sem interven
   (Bray et al., 2019, doi:10.1007/s42399-019-00053-w).
 - O motor roda no navegador do instrutor; se a página do instrutor for fechada, o roteiro
   em andamento é perdido (os monitores mantêm o último estado).
+
+## SimClin Captura (gestão, gravação e debriefing)
+
+`/captura.html` (botão **Captura · Agenda · Debriefing** na tela inicial) reproduz, em
+implementação aberta, o fluxo de um sistema de gestão de simulação do tipo SimCapture:
+
+| Etapa | No SimClin Captura |
+|---|---|
+| Agenda | Calendário mensal de salas, reservas únicas ou recorrentes (até 1 ano), conflito de sala e de equipamento permanente, aprovação de pedidos de docentes, exportação `.ics` |
+| Cursos e pessoas | Turmas com estudantes e docentes, importação/exportação CSV (ponte com Moodle/Canvas) |
+| Cenários | Objetivos, simulador, biblioteca de anotações com atalhos, avaliações vinculadas, prazo de retenção; importa os cenários do motor |
+| Gravação ao vivo | Até 4 vídeos sincronizados (webcams, captura de tela do monitor/PEP, fonte de teste) + microfone, via `MediaRecorder`; anotações por teclas 1–9 ou texto; avaliação ao vivo; transcrição opcional (Web Speech API) |
+| Dados do simulador | A estação entra na sala de 4 dígitos e grava sinais vitais, mudanças de estado e intervenções registradas no roteiro (`{type:"event"}` retransmitido pelo servidor) |
+| Debriefing | Reprodução sincronizada (grade, lado a lado, imagem sobre imagem, câmera única; 0,5–2×), linha do tempo com FC/SpO₂/PAS e marcadores, sinais vitais sobrepostos ao vídeo, notas |
+| Avaliações | Checklists (feito/não feito), escalas, múltipla escolha, texto; itens críticos; tipos antes/após/reflexão (estudante) e avaliador/monitoramento (docente) |
+| Relatórios | Horas por sala/curso/mês, horas-participante, desempenho por estudante, análise por item, anotações por categoria, exportação CSV |
+| Perfis | Administrador, docente e estudante (estudante vê só as próprias sessões e responde os próprios instrumentos) |
+
+Os dados ficam no navegador (IndexedDB): os vídeos são gravados em blocos de 2 s, de modo que
+uma gravação interrompida é recuperada ao reabrir a página. A câmera exige contexto seguro
+(`https://` ou `http://localhost`). Não há contas nem servidor de arquivos: para uso
+multiusuário institucional seria preciso um back-end com autenticação, armazenamento de
+vídeo e LTI 1.3. A gravação de pessoas exige consentimento e prazo de retenção (LGPD,
+Lei 13.709/2018), ambos presentes na interface.
+
