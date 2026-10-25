@@ -78,7 +78,7 @@ teste em `test/engine.test.js` cobrindo o caminho ideal e o caminho sem interven
 
 `/captura.html` (botão **HelseCapture · Agenda · Debriefing** na tela inicial), com a identidade
 visual Helse Solutions (barra marinho, menu lateral por módulos, tipografia IBM Plex, tema claro
-e escuro; logotipos em `public/img/`), reproduz, em implementação aberta, o fluxo de um sistema de gestão de simulação do tipo SimCapture:
+e escuro; ícone HelseCapture em `public/img/`, botões de captura em vermelho vivo), reproduz, em implementação aberta, o fluxo de um sistema de gestão de simulação do tipo SimCapture:
 
 | Etapa | No HelseCapture |
 |---|---|
