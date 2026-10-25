@@ -74,12 +74,13 @@ teste em `test/engine.test.js` cobrindo o caminho ideal e o caminho sem interven
 - O motor roda no navegador do instrutor; se a página do instrutor for fechada, o roteiro
   em andamento é perdido (os monitores mantêm o último estado).
 
-## SimClin Captura (gestão, gravação e debriefing)
+## HelseCapture (gestão, gravação e debriefing)
 
-`/captura.html` (botão **Captura · Agenda · Debriefing** na tela inicial) reproduz, em
-implementação aberta, o fluxo de um sistema de gestão de simulação do tipo SimCapture:
+`/captura.html` (botão **HelseCapture · Agenda · Debriefing** na tela inicial), com a identidade
+visual Helse Solutions (barra marinho, menu lateral por módulos, tipografia IBM Plex, tema claro
+e escuro; logotipos em `public/img/`), reproduz, em implementação aberta, o fluxo de um sistema de gestão de simulação do tipo SimCapture:
 
-| Etapa | No SimClin Captura |
+| Etapa | No HelseCapture |
 |---|---|
 | Agenda | Calendário mensal de salas, reservas únicas ou recorrentes (até 1 ano), conflito de sala e de equipamento permanente, aprovação de pedidos de docentes, exportação `.ics` |
 | Cursos e pessoas | Turmas com estudantes e docentes, importação/exportação CSV (ponte com Moodle/Canvas) |
