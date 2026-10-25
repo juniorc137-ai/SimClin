@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>HelseCapture</title>
+<link rel="icon" type="image/png" href="img/helsecapture-favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* HelseCapture · identidade Helse Solutions: barra superior marinho · menu lateral por módulos ·
+   área de trabalho com trilha, barra de ferramentas, painéis e tabelas densas · barra de status. */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  color-scheme:light;
+  --bg:#EEF2F6;--surface:#FFFFFF;--surface-2:#F6F8FB;--sunken:#E6EBF1;
+  --line:#D3DBE5;--line-strong:#B8C4D2;
+  --text:#102033;--muted:#56677B;--faint:#8796A8;
+  --brand:#0B2A5B;--brand-ink:#FFFFFF;--accent:#2F7CC1;--accent-soft:#E3EFFA;
+  --ok:#15803D;--ok-bg:#DCF5E5;--warn:#B45309;--warn-bg:#FDF0D5;--hi:#C2410C;--hi-bg:#FFE6D5;--bad:#B91C1C;--bad-bg:#FDE2E2;
+  --hr:#15803D;--spo:#0369A1;--bp:#C2410C;
+  --icon:url("img/helsecapture-icone.png");
+  --rec:#E10600;--rec-hover:#FF1A12;--rec-soft:rgba(225,6,0,.1);
+  --f-ui:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --f-cond:'IBM Plex Sans Condensed','Arial Narrow','Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --top-h:64px;--side-w:236px;--radius:6px;
+  /* nomes usados pelo código da aplicação */
+  --ink:var(--text);--mute:var(--muted);--card:var(--surface);--bg2:var(--surface-2);--chip:var(--surface-2);
+  --acc:var(--accent);--acc2:var(--accent);--font:var(--f-ui);--mono:var(--f-mono);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#0A121C;--surface:#111C29;--surface-2:#0E1823;--sunken:#0B141E;
+  --line:#22324A;--line-strong:#31476A;
+  --text:#E4ECF5;--muted:#9AACC1;--faint:#6B7F96;
+  --brand:#0F2F63;--accent:#5FA8E8;--accent-soft:rgba(95,168,232,.14);
+  --ok:#4ADE80;--ok-bg:rgba(74,222,128,.13);--warn:#FBBF24;--warn-bg:rgba(251,191,36,.13);--hi:#FB923C;--hi-bg:rgba(251,146,60,.14);--bad:#F87171;--bad-bg:rgba(248,113,113,.14);
+  --hr:#4ADE80;--spo:#60B8F5;--bp:#FB923C;--rec:#FF2A1F;--rec-hover:#FF4D40;--rec-soft:rgba(255,42,31,.16);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0A121C;--surface:#111C29;--surface-2:#0E1823;--sunken:#0B141E;
+  --line:#22324A;--line-strong:#31476A;
+  --text:#E4ECF5;--muted:#9AACC1;--faint:#6B7F96;
+  --brand:#0F2F63;--accent:#5FA8E8;--accent-soft:rgba(95,168,232,.14);
+  --ok:#4ADE80;--ok-bg:rgba(74,222,128,.13);--warn:#FBBF24;--warn-bg:rgba(251,191,36,.13);--hi:#FB923C;--hi-bg:rgba(251,146,60,.14);--bad:#F87171;--bad-bg:rgba(248,113,113,.14);
+  --hr:#4ADE80;--spo:#60B8F5;--bp:#FB923C;--rec:#FF2A1F;--rec-hover:#FF4D40;--rec-soft:rgba(255,42,31,.16);
+}
+html,body{background:var(--bg);color:var(--text);font:14px/1.5 var(--f-ui)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--brand)}
+a{color:var(--accent)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1{font:600 22px/1.25 var(--f-cond);letter-spacing:-.005em;margin:0 0 12px;text-wrap:balance}
+h2{font:600 14.5px/1.3 var(--f-cond);margin:0 0 10px}
+h3{font:600 11px var(--f-cond);margin:12px 0 6px;color:var(--faint);text-transform:uppercase;letter-spacing:.09em}
+
+/* ===== barra superior ===== */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;height:var(--top-h);background:var(--brand);color:var(--brand-ink);display:flex;align-items:center;gap:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.tb-logo{height:42px;aspect-ratio:1;flex:none;background:var(--icon) center/contain no-repeat;border-radius:9px;box-shadow:0 0 0 1px rgba(255,255,255,.14)}
+.cap{color:var(--rec);letter-spacing:.04em}
+.topbar .mod b .cap{color:#FF2A1F;font-size:inherit;opacity:1}
+.topbar .sep{width:1px;align-self:stretch;margin-block:12px;background:rgba(255,255,255,.18)}
+.topbar .mod{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.topbar .mod b{font:600 15px var(--f-cond);letter-spacing:.01em;white-space:nowrap}
+.topbar .mod>span{font-size:11.5px;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .ctx{display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:nowrap;min-width:0}
+.tb-chip{font-size:12px;padding:4px 10px;border-radius:4px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);white-space:nowrap;color:#fff}
+.tb-chip.lvl{font-weight:600;border:none}
+.tb-chip.lvl.ok{background:#15803D}.tb-chip.lvl.rec{background:var(--rec)}.tb-chip.lvl.rec::before{content:"● ";animation:pulse 1s infinite}
+button.tb-chip{cursor:pointer}
+.avatar{width:30px;height:30px;border-radius:50%;background:#2F7CC1;display:grid;place-items:center;font-weight:600;font-size:12px;color:#fff;flex:none}
+
+/* ===== estrutura ===== */
+.shell{display:grid;grid-template-columns:var(--side-w) minmax(0,1fr);min-height:calc(100vh - var(--top-h))}
+.side{background:var(--surface);border-right:1px solid var(--line);position:sticky;top:calc(var(--top-h) + env(safe-area-inset-top,0px));height:calc(100vh - var(--top-h) - env(safe-area-inset-top,0px));overflow-y:auto;display:flex;flex-direction:column;padding-left:env(safe-area-inset-left,0px)}
+.side .logo{display:flex;align-items:center;gap:12px;margin:18px 18px 10px;flex:none}
+.side .logo i{width:58px;height:58px;flex:none;background:var(--icon) center/contain no-repeat;border-radius:13px}
+.side .logo b{font:600 21px/1.05 var(--f-cond);color:var(--text);letter-spacing:.01em}
+.side .logo b .cap{display:block;font-size:19px;letter-spacing:.12em}
+#nav{display:flex;flex-direction:column}
+.navgrp{padding:10px 10px 4px}
+.navgrp>span{display:block;font:500 11px var(--f-cond);letter-spacing:.09em;text-transform:uppercase;color:var(--faint);padding:6px 10px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:transparent;padding:8px 10px;border-radius:var(--radius);cursor:pointer;color:var(--muted);font-size:13.5px}
+.nav button svg{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.nav button:hover{background:var(--surface-2);color:var(--text)}
+.nav button[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav .badge{margin-left:auto;font:11px var(--f-mono);padding:0 6px;border-radius:10px;background:var(--bad-bg);color:var(--bad)}
+.side .foot{margin-top:auto;padding:14px 20px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint)}
+.main{min-width:0;display:flex;flex-direction:column}
+.work{padding:18px max(22px,env(safe-area-inset-right,0px)) 28px 22px;display:flex;flex-direction:column;gap:14px;flex:1;min-width:0}
+.crumbs{font-size:12px;color:var(--faint)}
+.crumbs b{color:var(--muted);font-weight:500}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:9px 12px}
+.toolbar .field{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.toolbar .spacer{flex:1}
+.toolbar .stamp{white-space:nowrap;font:11.5px var(--f-mono);color:var(--faint)}
+#main{min-width:0}
+.statusbar{display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-size:11.5px;color:var(--muted);background:var(--surface);border-top:1px solid var(--line);padding:6px max(22px,env(safe-area-inset-right,0px)) 6px 22px}
+.statusbar span{display:inline-flex;align-items:center;gap:6px}
+.statusbar .dot{width:7px;height:7px}
+.statusbar .right{margin-left:auto;font-family:var(--f-mono)}
+
+/* ===== componentes ===== */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;min-width:0}
+.card>h2:first-child,.card>.between:first-child h2{margin:-12px -14px 12px;padding:9px 14px;background:var(--surface-2);border-bottom:1px solid var(--line);border-radius:var(--radius) var(--radius) 0 0}
+.card>.between:first-child:has(h2){margin:-12px -14px 12px;padding:6px 14px;background:var(--surface-2);border-bottom:1px solid var(--line);border-radius:var(--radius) var(--radius) 0 0}
+.card>.between:first-child h2{margin:0;padding:0;background:none;border:0}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:14px}
+.kpi{padding:11px 14px 11px 16px;border-right:1px solid var(--line);display:flex;flex-direction:column-reverse;justify-content:flex-end;gap:2px;min-width:0;position:relative}
+.kpi:last-child{border-right:0}
+.kpi::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 2px 2px 0;background:var(--kc,var(--accent))}
+.kpi:nth-child(2){--kc:var(--ok)}.kpi:nth-child(3){--kc:var(--warn)}.kpi:nth-child(4){--kc:var(--hi)}
+.kpi b{display:block;font:600 26px/1.15 var(--f-cond);color:var(--text);font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--surface);color:var(--text);border:1px solid var(--line-strong);border-radius:4px;padding:5px 11px;font-size:12.5px;cursor:pointer;white-space:nowrap;text-decoration:none;line-height:1.4}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+.btn.primary:hover{filter:brightness(1.08);color:#fff}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff;font-weight:500}
+.btn.danger:hover{filter:brightness(1.08);color:#fff}
+.btn.rec{background:var(--rec);border-color:var(--rec);color:#fff;font-weight:600;box-shadow:0 1px 0 rgba(0,0,0,.08),0 0 0 3px var(--rec-soft)}
+.btn.rec-o{border-color:var(--rec);color:var(--rec);font-weight:600}
+.btn.rec-o:hover{background:var(--rec);color:#fff}
+.btn.rec:hover{background:var(--rec-hover);border-color:var(--rec-hover);color:#fff}
+.nav button[data-v="aovivo"] svg circle{color:var(--rec);fill:var(--rec);stroke:var(--rec)}
+.btn.ghost{background:transparent}
+.btn.sm{padding:2px 8px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row.end{justify-content:flex-end}
+.between{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+input,select,textarea{background:var(--surface-2);color:var(--text);border:1px solid var(--line-strong);border-radius:4px;padding:5px 8px;font:inherit;font-size:13px;max-width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+textarea{width:100%;min-height:70px;resize:vertical}
+input[type=checkbox],input[type=radio],input[type=range]{accent-color:var(--accent)}
+input[type=color]{padding:2px;height:32px;width:56px}
+.f{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.f>span{font-size:12px;color:var(--muted)}
+.fg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 12px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font:600 12px var(--f-cond);color:var(--muted);border-bottom-color:var(--line-strong);white-space:nowrap}
+tbody tr:nth-child(even) td{background:var(--surface-2)}
+tr.click{cursor:pointer}tr.click:hover td,tbody tr:hover td{background:var(--accent-soft)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius)}
+.card .tbl{border:0;margin:0 -14px;border-radius:0}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:500;padding:1px 8px;border-radius:3px;background:var(--sunken);color:var(--muted);white-space:nowrap}
+.tag.ok{background:var(--ok-bg);color:var(--ok)}.tag.warn{background:var(--warn-bg);color:var(--warn)}.tag.bad{background:var(--bad-bg);color:var(--bad)}.tag.info{background:var(--accent-soft);color:var(--accent)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;flex:none}
+.empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line-strong);border-radius:var(--radius);background:var(--surface)}
+ul.plain{list-style:none}
+ul.plain li{padding:7px 0;border-bottom:1px solid var(--line)}
+ul.plain li:last-child{border-bottom:0}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:4px 10px;max-height:220px;overflow:auto;padding:6px;border:1px solid var(--line);border-radius:4px;background:var(--surface-2)}
+.checks label{display:flex;gap:6px;align-items:center;font-size:13px}
+/* agenda */
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+.cal .dh{background:var(--surface-2);padding:6px;font:600 12px var(--f-cond);color:var(--muted);text-align:center;border-bottom:1px solid var(--line-strong)}
+.cal .dc{min-height:92px;border-top:1px solid var(--line);border-left:1px solid var(--line);padding:4px;font-size:12px;min-width:0}
+.cal .dc:nth-child(7n+1){border-left:0}
+.cal .dc .dn{font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.cal .dc.out{background:var(--surface-2);opacity:.6}.cal .dc.today .dn{background:var(--accent);color:#fff;border-radius:3px;padding:0 6px}
+.chipev{display:block;margin-top:3px;padding:2px 5px;border-radius:3px;background:var(--accent-soft);color:var(--text);border-left:3px solid var(--accent);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chipev.pend{border-left-style:dashed;background:var(--warn-bg)}
+/* janelas */
+.modal{position:fixed;inset:0;background:rgba(8,18,32,.55);z-index:70;display:flex;align-items:flex-start;justify-content:center;padding:6vh 12px;overflow:auto}
+.modal[hidden]{display:none}
+.mbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;width:min(760px,100%);box-shadow:0 18px 50px rgba(8,18,32,.28)}
+.mbox>h2:first-child{margin:-16px -18px 14px;padding:11px 18px;background:var(--surface-2);border-bottom:1px solid var(--line);border-radius:var(--radius) var(--radius) 0 0;font-size:15px}
+.mact{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
+.conf{background:var(--bad-bg);border:1px solid var(--bad);color:var(--text);border-radius:var(--radius);padding:8px 10px;margin:8px 0;font-size:13px}
+#toast{position:fixed;bottom:44px;left:50%;transform:translateX(-50%);background:var(--brand);color:#fff;padding:9px 16px;border-radius:var(--radius);z-index:80;display:none;max-width:90vw;box-shadow:0 8px 24px rgba(8,18,32,.3);font-size:13px}
+/* itens de avaliação */
+.it{border:1px solid var(--line);border-radius:4px;padding:8px;margin-bottom:6px;display:grid;grid-template-columns:1fr 130px 70px;gap:6px;background:var(--surface-2)}
+.it .opts{grid-column:1/3}
+.it .ctl{display:flex;gap:8px;align-items:center;font-size:12px}
+.q{padding:9px 0;border-bottom:1px solid var(--line)}
+.q .qt{margin-bottom:5px}
+.q .crit{color:var(--bad);font-size:11px;margin-left:6px;font-weight:600}
+.q .opts label{margin-right:12px;display:inline-flex;gap:4px;align-items:center}
+/* sessão ao vivo */
+.live-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;padding:9px 12px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--rec);border-radius:var(--radius)}
+.recdot{width:12px;height:12px;border-radius:50%;background:var(--rec);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.25}}
+#rec-clock{font:500 22px var(--f-mono)}
+.live-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px}
+.vgrid{display:grid;gap:6px;grid-template-columns:1fr 1fr;align-content:start}
+.vgrid.n1{grid-template-columns:1fr}
+.vtile{position:relative;background:#000;border-radius:var(--radius);overflow:hidden;aspect-ratio:16/9}
+.vtile video{width:100%;height:100%;object-fit:contain;background:#000}
+.vtile .lbl{position:absolute;left:6px;top:6px;background:rgba(11,42,91,.85);color:#fff;padding:1px 7px;border-radius:3px;font-size:12px}
+.vtile .x{position:absolute;right:6px;top:6px}
+.vtile input.lbl{border:0;width:60%}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:10px;flex-wrap:wrap}
+.tabs button{background:none;border:0;color:var(--muted);padding:7px 10px;cursor:pointer;font:inherit;font-size:13px;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.tp{display:none}.tp.on{display:block}
+.annbtns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.annbtns .btn{text-align:left;white-space:normal;border-left:4px solid var(--c,var(--accent));justify-content:space-between}
+.annbtns kbd{font:11px var(--f-mono);color:var(--faint)}
+.log{max-height:360px;overflow:auto;list-style:none}
+.log li{display:flex;gap:8px;align-items:flex-start;padding:6px 4px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px}
+.log li:hover{background:var(--surface-2)}
+.log li.sim{color:var(--muted);font-size:12px}
+.log li.act{background:var(--accent-soft)}
+.log .tm{font:12px var(--f-mono);color:var(--faint);min-width:44px}
+.log .bar{width:4px;align-self:stretch;border-radius:2px;flex-shrink:0}
+.log .txt{flex:1;min-width:0}
+.vit{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.vit div{background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:6px 8px}
+.vit b{display:block;font:500 20px var(--f-mono)}
+.vit span{font-size:11px;color:var(--muted)}
+/* reprodução e debriefing */
+.player{position:relative;background:#000;border-radius:var(--radius);overflow:hidden;display:grid;gap:3px}
+.player.lay-grade{grid-template-columns:1fr 1fr}
+.player.lay-grade.n1{grid-template-columns:1fr}
+.player.lay-lado{grid-template-columns:repeat(var(--n,2),1fr)}
+.player.lay-unica .vbox:not(.main){display:none}
+.player.lay-pip{display:block}
+.player.lay-pip .vbox:not(.main){position:absolute;width:24%;right:8px;bottom:8px;z-index:2;border:2px solid #fff3;border-radius:4px}
+.player.lay-pip .vbox:not(.main)~.vbox:not(.main){bottom:auto;top:8px}
+.vbox{position:relative;aspect-ratio:16/9;background:#000;cursor:pointer}
+.vbox video{width:100%;height:100%;object-fit:contain;display:block}
+.vbox .vlabel{position:absolute;left:6px;bottom:6px;background:rgba(11,42,91,.85);color:#fff;padding:0 6px;border-radius:3px;font-size:11px}
+.vbox.idle video{opacity:.25}.vbox.gone::after{content:"vídeo indisponível";position:absolute;inset:0;display:grid;place-items:center;color:#9AACC1}
+.novideo{padding:40px;text-align:center;color:#9AACC1}
+.ovl{position:absolute;right:8px;top:8px;z-index:3;background:rgba(10,18,28,.85);color:#E4ECF5;border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:4px 8px;font:12px var(--f-mono);display:flex;gap:10px}
+.ovl:empty{display:none}
+.pctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0;padding:7px 10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+#pb-time{font:13px var(--f-mono);min-width:120px}
+#tl{width:100%;height:130px;display:block;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);cursor:crosshair;touch-action:none}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:8px 0 4px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:4px;border-radius:2px}
+.bars .b{display:grid;grid-template-columns:160px minmax(0,1fr) 70px;gap:8px;align-items:center;margin:5px 0;font-size:13px}
+.bars .t{background:var(--sunken);border-radius:3px;height:10px;overflow:hidden}
+.bars .t i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.bars .v{font-family:var(--f-mono);text-align:right;font-size:12px}
+@media (max-width:1100px){
+  .topbar .ctx .hide-md{display:none}
+  .toolbar .stamp,.toolbar .spacer{display:none}
+  .cols3{grid-template-columns:1fr 1fr}
+}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .side{position:sticky;top:calc(var(--top-h) + env(safe-area-inset-top,0px));z-index:40;height:auto;flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:0 max(8px,env(safe-area-inset-right,0px)) 0 max(8px,env(safe-area-inset-left,0px))}
+  .side .logo,.side .foot,.navgrp>span{display:none}
+  #nav{flex-direction:row}
+  .navgrp{padding:6px 0;display:contents}
+  .nav{flex-direction:row;gap:2px;padding:6px 0}
+  .nav button{width:auto;white-space:nowrap;padding:7px 10px}
+  .work{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .statusbar{padding-left:16px;padding-right:16px}
+  .topbar .mod>span{display:none}
+  .tb-logo{height:42px}
+  .cols,.cols3,.live-grid,.fg{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi{border-bottom:1px solid var(--line)}
+  .kpi:nth-child(2n){border-right:0}
+  .cal .dc{min-height:60px}.chipev{font-size:10px}
+  .bars .b{grid-template-columns:100px minmax(0,1fr) 56px}
+}
+@media (max-width:560px){
+  .topbar{gap:10px}
+  .topbar .sep,.topbar .ctx .tb-chip:not(.lvl):not(#tb-theme){display:none}
+  .tb-logo{height:36px}
+  .toolbar select{max-width:150px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{.side,.topbar,.toolbar,.statusbar,.crumbs,.pctl{display:none}.shell{display:block}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <span class="tb-logo" role="img" aria-label="HelseCapture"></span>
+  <span class="sep" aria-hidden="true"></span>
+  <div class="mod"><b>Helse<span class="cap">CAPTURE</span></b><span>Gravação, agenda e debriefing de simulação clínica</span></div>
+  <div class="ctx">
+    <span class="tb-chip hide-md" id="tb-inst"></span>
+    <span class="tb-chip mono" id="tb-clock"></span>
+    <button type="button" class="tb-chip" id="tb-theme" data-act="theme" title="Alternar tema claro/escuro" aria-label="Alternar tema"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-2px"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg></button>
+    <span class="tb-chip lvl ok" id="tb-status">Pronto</span>
+    <div class="avatar" id="tb-avatar" title="Usuário">HC</div>
+  </div>
+</header>
+<div class="shell">
+  <aside class="side" aria-label="Módulos">
+    <div class="logo" role="img" aria-label="HelseCapture"><i></i><b>Helse<span class="cap">CAPTURE</span></b></div>
+    <div id="nav"></div>
+    <div class="foot">HelseCapture v1.0 · dados locais<br>Helse Solutions</div>
+  </aside>
+  <div class="main">
+    <main class="work">
+      <div class="crumbs"><span>Helse<span class="cap">CAPTURE</span></span> › <b id="crumb">Painel</b></div>
+      <div class="toolbar">
+        <label class="field">Perfil <select id="role" data-change="role">
+          <option value="admin">Administrador</option><option value="docente">Docente</option><option value="estudante">Estudante</option>
+        </select></label>
+        <label class="field" id="me-wrap">Pessoa <select id="me" data-change="me"></select></label>
+        <span class="spacer"></span>
+        <span class="stamp" id="tb-stamp"></span>
+      </div>
+      <section id="main" class="view"><div class="empty">Carregando…</div></section>
+    </main>
+    <footer class="statusbar" id="statusbar"></footer>
+  </div>
+</div>
+<div id="modal" class="modal" hidden><div class="mbox" id="mbody"></div></div>
+<div id="ask" class="modal" hidden style="z-index:75"><div class="mbox" style="width:min(440px,100%)"><p id="ask-msg"></p>
+  <div class="mact"><button type="button" class="btn ghost" id="ask-no">Cancelar</button><button type="button" class="btn danger" id="ask-yes">Confirmar</button></div></div></div>
+<div id="toast"></div>
+
+<script src="captura-core.js"></script>
+<script src="scenarios.js"></script>
+<script src="captura-biblioteca.js"></script>
+<script>
+"use strict";
+/* ════════════════════════════════════════════════════════════════════════
+ * HelseCapture – gestão, gravação e debriefing de simulação clínica (identidade Helse Solutions)
+ *
+ * Implementação aberta (clean-room) do fluxo descrito publicamente para
+ * sistemas de gestão de simulação: agenda de salas/recursos → cenário →
+ * gravação multicâmera sincronizada com dados do simulador e anotações com
+ * carimbo de tempo → debriefing com reprodução sincronizada → avaliações
+ * (checklists, escalas, reflexão) → relatórios.
+ *
+ * Tudo fica no navegador: metadados e vídeos em IndexedDB; gravação por
+ * MediaRecorder; dados do simulador pela sala WebSocket do SimClin.
+ * ════════════════════════════════════════════════════════════════════════ */
+const C = window.CapturaCore;
+const DAY = 86400000;
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtDate = (ts) => new Date(ts).toLocaleDateString("pt-BR");
+const fmtDT = (ts) => new Date(ts).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const fmtHM = (ts) => new Date(ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+const fmtH = (h) => h.toFixed(1).replace(".", ",") + " h";
+const fmtMB = (b) => (b / 1048576).toFixed(1).replace(".", ",") + " MB";
+const pad = (n) => String(n).padStart(2, "0");
+const isoDate = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+const isoTime = (ts) => { const d = new Date(ts); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const PALETTE = ["#2F7CC1", "#15803D", "#B45309", "#B91C1C", "#7C3AED", "#DB2777", "#CA8A04", "#64748B", "#0F766E"];
+const colorFor = (s) => { let h = 0; for (const c of String(s || "")) h = (h * 31 + c.charCodeAt(0)) >>> 0; return PALETTE[h % PALETTE.length]; };
+
+const ROLES = { admin: "Administrador", docente: "Docente", estudante: "Estudante", pe: "Paciente padronizado" };
+const EVAL_TYPES = {
+  antes: "Antes da sessão (estudante)", depois: "Após a sessão (estudante)", reflexao: "Reflexão (estudante)",
+  avaliador: "Avaliador docente (checklist)", monitor: "Monitoramento ao vivo (equipe)",
+};
+const STUDENT_TYPES = ["antes", "depois", "reflexao"];
+const ITEM_KINDS = { check: "Feito / não feito", escala: "Escala 0–N", multipla: "Múltipla escolha", texto: "Texto livre" };
+const SIM_CATS = { evento: "Intervenção", estado: "Estado do cenário", resposta: "Resposta fisiológica", manual: "Ajuste do instrutor", comentario: "Comentário do instrutor", sistema: "Sistema" };
+
+// ── Armazenamento (IndexedDB; memória como reserva) ──────────────────────
+let USE_MEM = false;
+const MEM = { kv: new Map(), media: new Map() };
+let idbP = null;
+function idb() {
+  if (!idbP) idbP = new Promise((res, rej) => {
+    const r = indexedDB.open("simclin-captura", 1);
+    r.onupgradeneeded = () => { r.result.createObjectStore("kv"); r.result.createObjectStore("media"); };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+  return idbP;
+}
+async function tx(store, mode, fn) {
+  const d = await idb();
+  return new Promise((res, rej) => {
+    const t = d.transaction(store, mode);
+    let out;
+    const r = fn(t.objectStore(store));
+    if (r) r.onsuccess = () => { out = r.result; };
+    t.oncomplete = () => res(out);
+    t.onerror = t.onabort = () => rej(t.error);
+  });
+}
+const mediaRange = (id) => IDBKeyRange.bound([id, 0], [id, Infinity]);
+const kvGet = (k) => USE_MEM ? Promise.resolve(MEM.kv.get(k)) : tx("kv", "readonly", (s) => s.get(k));
+const kvPut = (k, v) => USE_MEM ? (MEM.kv.set(k, v), Promise.resolve()) : tx("kv", "readwrite", (s) => s.put(v, k));
+const kvDel = (k) => USE_MEM ? (MEM.kv.delete(k), Promise.resolve()) : tx("kv", "readwrite", (s) => s.delete(k));
+const putChunk = (id, seq, blob) => USE_MEM ? (MEM.media.set(id + "|" + String(seq).padStart(6, "0"), blob), Promise.resolve()) : tx("media", "readwrite", (s) => s.put(blob, [id, seq]));
+const getChunks = (id) => USE_MEM
+  ? Promise.resolve([...MEM.media.keys()].filter((k) => k.startsWith(id + "|")).sort().map((k) => MEM.media.get(k)))
+  : tx("media", "readonly", (s) => s.getAll(mediaRange(id)));
+const delMedia = (id) => USE_MEM
+  ? ([...MEM.media.keys()].filter((k) => k.startsWith(id + "|")).forEach((k) => MEM.media.delete(k)), Promise.resolve())
+  : tx("media", "readwrite", (s) => s.delete(mediaRange(id)));
+
+let DB = null;
+function emptyDB() {
+  return { v: 1, locations: [], resources: [], people: [], courses: [], scenarios: [], evaluations: [], reservations: [], sessions: [],
+    settings: { institution: "", retentionDays: 0, wsUrl: "" } };
+}
+let saveT = 0;
+function save() { clearTimeout(saveT); saveT = setTimeout(() => kvPut("db", DB).catch((e) => toast("Falha ao salvar: " + e.message)), 150); }
+const byId = (col, id) => (DB[col] || []).find((x) => x.id === id);
+const nameOf = (col, id, f) => { const x = byId(col, id); return x ? x[f || (col === "courses" ? "title" : col === "scenarios" || col === "evaluations" ? "title" : "name")] : "—"; };
+
+// ── Estado da interface ──────────────────────────────────────────────────
+const UI = { view: "painel", role: "admin", me: "", sel: null, agMonth: null, agLoc: "", layout: "grade", main: 0, pbFilter: "all", vtab: "monitor",
+  sesCourse: "", sesQ: "", repCourse: "", repEval: "" };
+function loadPrefs() { try { Object.assign(UI, JSON.parse(localStorage.getItem("captura-ui") || "{}")); } catch (e) {} }
+function savePrefs() { try { const { view, role, me, layout, agLoc, theme } = UI; localStorage.setItem("captura-ui", JSON.stringify({ view, role, me, layout, agLoc, theme })); } catch (e) {} }
+const canEdit = () => UI.role !== "estudante";
+const meLabel = () => (UI.me && nameOf("people", UI.me)) || ROLES[UI.role];
+
+function toast(msg, ms = 3200) {
+  const t = $("#toast"); t.textContent = msg; t.style.display = "block";
+  clearTimeout(toast.t); toast.t = setTimeout(() => (t.style.display = "none"), ms);
+}
+// No visualizador de Artifacts, links de download são bloqueados: usa a capacidade "downloads".
+let DOWNLOADS = null;
+try { if (window.claude && window.claude.use) window.claude.use("downloads").then((d) => { DOWNLOADS = d; }).catch(() => {}); } catch (e) {}
+function download(name, data, type = "text/plain;charset=utf-8") {
+  const b = data instanceof Blob ? data : new Blob([type.includes("csv") ? "\uFEFF" + data : data], { type });
+  if (DOWNLOADS) {
+    DOWNLOADS.save({ filename: name, data: b }).catch((e) => {
+      if (e && e.code === "declined") return;
+      toast(e && e.code === "rejected_extension" ? "Este formato não pode ser baixado nesta versão; use o arquivo HTML." : "Download indisponível aqui: " + ((e && e.message) || "erro"));
+    });
+    return;
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+const opt = (v, label, sel) => `<option value="${esc(v)}" ${String(v) === String(sel ?? "") ? "selected" : ""}>${esc(label)}</option>`;
+const opts = (col, sel, empty = "—") => opt("", empty, sel) + (DB[col] || []).map((x) => opt(x.id, x.title || x.name, sel)).join("");
+
+// ── Navegação ────────────────────────────────────────────────────────────
+const ALL = ["admin", "docente", "estudante"], STAFF = ["admin", "docente"];
+const ICO = {
+  painel: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+  agenda: '<rect x="3" y="5" width="18" height="16" rx="1.5"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  aovivo: '<rect x="2.5" y="6" width="13" height="12" rx="1.5"/><path d="M15.5 10.5 21 7v10l-5.5-3.5"/><circle cx="9" cy="12" r="2" fill="currentColor"/>',
+  sessoes: '<rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="m10 8 4.5 2.5L10 13z"/><path d="M3 20.5h18"/>',
+  avaliacoes: '<rect x="5" y="3.5" width="14" height="18" rx="1.5"/><path d="M9 3.5h6v3H9z"/><path d="m8.5 13 2 2 4-4"/>',
+  relatorios: '<path d="M3 20h18"/><path d="M6 16v-5M11 16V7M16 16v-8M20 16v-3"/>',
+  cursos: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.3 3-5.2 6-5.2s5.4 1.9 6 5.2"/><path d="M16 4.8a3 3 0 0 1 0 6M18 14.9c1.6.7 2.6 2.4 3 5.1"/>',
+  cenarios: '<path d="M4 4h16v10H4z"/><path d="M8 20h8M12 14v6"/><path d="M7 11l3-3 2 2 4-4"/>',
+  config: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.2 5.6l2.1 2.1M17.7 16.3l2.1 2.1M2.5 12h3M18.5 12h3M4.2 18.4l2.1-2.1M17.7 7.7l2.1-2.1"/>',
+};
+const NAV = [
+  ["Operação", [["painel", "Painel", ALL], ["agenda", "Agenda", ALL], ["aovivo", "Sessão ao vivo", STAFF]]],
+  ["Debriefing e avaliação", [["sessoes", "Sessões e debriefing", ALL], ["avaliacoes", "Avaliações", STAFF], ["relatorios", "Relatórios", STAFF]]],
+  ["Cadastros", [["cursos", "Cursos e pessoas", STAFF], ["cenarios", "Cenários", STAFF]]],
+  ["Sistema", [["config", "Configurações", ["admin"]]]],
+];
+const VIEW_LABEL = Object.fromEntries(NAV.flatMap(([, items]) => items.map(([id, label]) => [id, label])));
+VIEW_LABEL.sessao = "Sessão";
+const R = {}, AFTER = {};
+function go(view, sel) {
+  if (LIVE.recording && view !== "aovivo") return toast("Encerre a gravação antes de sair da sessão ao vivo.");
+  if (UI.view === "sessao" || view === "sessao") teardownPB();
+  UI.view = view; if (sel !== undefined) UI.sel = sel;
+  savePrefs(); render(); window.scrollTo(0, 0);
+}
+function render() {
+  const groups = NAV.map(([g, items]) => [g, items.filter((n) => n[2].includes(UI.role))]).filter(([, items]) => items.length);
+  if (!groups.some(([, items]) => items.some((n) => n[0] === UI.view)) && UI.view !== "sessao") UI.view = "painel";
+  const pend = DB.reservations.filter((r) => r.status === "pendente").length;
+  $("#nav").innerHTML = groups.map(([g, items]) => `<div class="navgrp"><span>${g}</span><nav class="nav">${items.map(([id, label]) =>
+    `<button ${UI.view === id || (UI.view === "sessao" && id === "sessoes") ? 'aria-current="page"' : ""} data-act="go" data-v="${id}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[id]}</svg>${label}${id === "agenda" && pend && canEdit() ? `<span class="badge" title="Reservas pendentes">${pend}</span>` : ""}</button>`).join("")}</nav></div>`).join("");
+  $("#role").value = UI.role;
+  const pool = DB.people.filter((p) => UI.role === "estudante" ? p.role === "estudante" : UI.role === "docente" ? p.role === "docente" : p.role === "admin" || p.role === "docente");
+  if (UI.me && !pool.some((p) => p.id === UI.me)) UI.me = "";
+  if (UI.role === "estudante" && !UI.me && pool[0]) UI.me = pool[0].id;
+  $("#me").innerHTML = (UI.role === "estudante" ? "" : opt("", "(não identificado)", UI.me)) + pool.map((p) => opt(p.id, p.name, UI.me)).join("");
+  $("#me-wrap").style.display = pool.length ? "" : "none";
+  $("#main").innerHTML = R[UI.view]();
+  if (AFTER[UI.view]) AFTER[UI.view]();
+  chrome();
+}
+// Barra superior, trilha e barra de status (identidade Helse)
+function chrome() {
+  const s = UI.view === "sessao" && byId("sessions", UI.sel);
+  $("#crumb").textContent = s ? `Sessões e debriefing › ${s.title}` : VIEW_LABEL[UI.view] || "";
+  $("#tb-inst").textContent = DB.settings.institution || "Centro de simulação";
+  $("#tb-inst").hidden = !DB.settings.institution;
+  const st = $("#tb-status"); st.className = "tb-chip lvl " + (LIVE.recording ? "rec" : "ok"); st.textContent = LIVE.recording ? "Gravando" : "Pronto";
+  const who = meLabel(); $("#tb-avatar").textContent = who.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "HC";
+  $("#tb-avatar").title = `${who} · ${ROLES[UI.role]}`;
+  $("#tb-stamp").textContent = `${DB.sessions.length} sessões · ${DB.reservations.length} reservas · ${DB.people.length} pessoas`;
+  const sim = LIVE.sim && LIVE.sim.status === "conectado";
+  $("#statusbar").innerHTML = `<span><i class="dot" style="background:var(--ok)"></i>Armazenamento ${USE_MEM ? "em memória (não persiste)" : "local (IndexedDB)"}</span>
+    <span><i class="dot" style="background:${sim ? "var(--ok)" : "var(--faint)"}"></i>Simulador ${sim ? "conectado · sala " + esc(LIVE.sim.room) : "desconectado"}</span>
+    <span><i class="dot" style="background:var(--accent)"></i>Perfil: ${esc(ROLES[UI.role])}</span>
+    <span class="right">HelseCapture v1.0</span>`;
+}
+function tick() { const c = $("#tb-clock"); if (c) c.textContent = new Date().toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); }
+function applyTheme() { if (UI.theme) document.documentElement.dataset.theme = UI.theme; else delete document.documentElement.dataset.theme; }
+
+// ── Confirmação na própria página (confirm() é bloqueado em alguns visualizadores) ──
+function ask(msg, yes = "Confirmar") {
+  return new Promise((res) => {
+    const box = $("#ask"); $("#ask-msg").textContent = msg; $("#ask-yes").textContent = yes; box.hidden = false; $("#ask-no").focus();
+    const done = (v) => { box.hidden = true; $("#ask-yes").onclick = $("#ask-no").onclick = null; ask.close = null; res(v); };
+    $("#ask-yes").onclick = () => done(true); $("#ask-no").onclick = () => done(false); ask.close = () => done(false);
+  });
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────
+let MODAL_SUBMIT = null, MODAL_CLOSE = null;
+function modal(title, body, { submit = "Salvar", onSubmit = null, extra = "", onClose = null } = {}) {
+  $("#mbody").innerHTML = `<form id="mform" novalidate><h2>${esc(title)}</h2>${body}
+    <div class="mact">${extra}<button type="button" class="btn ghost" data-act="modal-close">${onSubmit ? "Cancelar" : "Fechar"}</button>
+    ${onSubmit ? `<button class="btn primary" type="submit">${esc(submit)}</button>` : ""}</div></form>`;
+  $("#modal").hidden = false; MODAL_SUBMIT = onSubmit; MODAL_CLOSE = onClose;
+  const first = $("#mform input:not([type=hidden]),#mform select,#mform textarea"); if (first) first.focus();
+}
+function closeModal() { $("#modal").hidden = true; $("#mbody").innerHTML = ""; const c = MODAL_CLOSE; MODAL_SUBMIT = MODAL_CLOSE = null; if (c) c(); }
+document.addEventListener("submit", (e) => {
+  if (e.target.id !== "mform") return;
+  e.preventDefault();
+  const f = e.target, r = MODAL_SUBMIT ? MODAL_SUBMIT(new FormData(f), f) : true;
+  Promise.resolve(r).then((v) => { if (v !== false) closeModal(); });
+});
+
+// ── Utilidades de domínio ────────────────────────────────────────────────
+function visibleSessions() {
+  return UI.role === "estudante" ? DB.sessions.filter((s) => (s.participantIds || []).includes(UI.me)) : DB.sessions;
+}
+function occurrencesBetween(a, b) {
+  const out = [];
+  for (const r of DB.reservations) {
+    if (r.status === "negada") continue;
+    if (UI.role === "estudante") { const c = byId("courses", r.courseId); if (!c || !(c.participantIds || []).includes(UI.me)) continue; }
+    for (const o of C.expandRecurrence(r)) if (o.end > a && o.start < b) out.push({ ...o, res: r });
+  }
+  return out.sort((x, y) => x.start - y.start);
+}
+const kpi = (label, v) => `<div class="kpi"><b>${esc(v)}</b><span>${esc(label)}</span></div>`;
+function bars(obj, label = (k) => k, fmt = (v) => v) {
+  const e = Object.entries(obj).sort((a, b) => b[1] - a[1]);
+  if (!e.length) return `<div class="empty">Sem dados</div>`;
+  const max = Math.max(...e.map((x) => x[1])) || 1;
+  return `<div class="bars">${e.map(([k, v]) => `<div class="b"><span>${esc(label(k))}</span><div class="t"><i style="width:${(v / max) * 100}%"></i></div><span class="v">${esc(fmt(v))}</span></div>`).join("")}</div>`;
+}
+
+// ═════════════════════════════ PAINEL ═════════════════════════════════════
+R.painel = () => {
+  const ses = visibleSessions(), u = C.usageReport(ses), now = Date.now();
+  const nRes = ses.reduce((a, s) => a + (s.results || []).length, 0);
+  const up = occurrencesBetween(now, now + 14 * DAY).slice(0, 8);
+  const recent = [...ses].sort((a, b) => b.startedAt - a.startedAt).slice(0, 6);
+  const pend = UI.role === "admin" ? DB.reservations.filter((r) => r.status === "pendente").length : 0;
+  return `<h1>Painel${DB.settings.institution ? " · " + esc(DB.settings.institution) : ""}</h1>
+  ${!DB.sessions.length && UI.role === "admin" ? `<div class="card"><div class="between"><div><b>Comece por aqui.</b> <span class="muted">Carregue a biblioteca baseada em evidências: 5 cursos, 13 cenários e 24 avaliações e checklists construídos a partir de 24 artigos de <i>Clinical Simulation in Nursing</i> (2025), incluindo os padrões INACSL 2025, com agenda, estudantes e uma sessão de pré-eclâmpsia gravada.</span></div><button class="btn primary" data-act="demo">Carregar biblioteca</button></div></div>` : ""}
+  ${pend ? `<div class="card"><span class="tag warn">${pend} reserva(s) aguardando aprovação</span> <button class="btn sm" data-act="go" data-v="agenda">Ver agenda</button></div>` : ""}
+  <div class="kpis">${kpi("Sessões gravadas", u.sessions)}${kpi("Horas de simulação", fmtH(u.hours))}${kpi("Horas-participante", fmtH(u.personHours))}${kpi("Avaliações registradas", nRes)}</div>
+  <div class="cols">
+    <section class="card"><h2>Próximas reservas (14 dias)</h2>
+      ${up.length ? `<ul class="plain">${up.map((o) => `<li><span class="dot" style="background:${esc(o.res.color || "#2F7CC1")}"></span> <b>${fmtDate(o.start)} ${fmtHM(o.start)}–${fmtHM(o.end)}</b> ${esc(o.res.title)} <span class="muted">· ${esc(nameOf("locations", o.res.locationId))}</span>
+        ${canEdit() ? `<button class="btn sm rec-o" style="float:right" data-act="live-from-res" data-id="${o.res.id}">Iniciar sessão</button>` : ""}</li>`).join("")}</ul>` : `<div class="empty">Nenhuma reserva</div>`}
+    </section>
+    <section class="card"><h2>${UI.role === "estudante" ? "Minhas sessões" : "Sessões recentes"}</h2>
+      ${recent.length ? `<ul class="plain">${recent.map((s) => `<li class="click" style="cursor:pointer" data-act="ses-open" data-id="${s.id}"><b>${esc(s.title)}</b><br><span class="muted small">${fmtDT(s.startedAt)} · ${C.fmtClock(s.duration)} · ${(s.annotations || []).length} anotações · ${(s.media || []).length} vídeo(s)</span></li>`).join("")}</ul>` : `<div class="empty">Nenhuma sessão gravada</div>`}
+    </section>
+  </div>
+  ${canEdit() ? `<div class="row"><button class="btn rec" data-act="go" data-v="aovivo">● Nova sessão ao vivo</button><button class="btn" data-act="res-new">+ Reserva</button><a class="btn" href="index.html">Abrir monitor/instrutor SimClin</a></div>` : ""}`;
+};
+
+// ═════════════════════════════ AGENDA ═════════════════════════════════════
+R.agenda = () => {
+  const m = new Date(UI.agMonth || Date.now()); m.setDate(1); m.setHours(0, 0, 0, 0); UI.agMonth = +m;
+  const off = (m.getDay() + 6) % 7, g0 = new Date(m.getFullYear(), m.getMonth(), 1 - off);
+  const occ = occurrencesBetween(+g0, +g0 + 42 * DAY).filter((o) => !UI.agLoc || o.res.locationId === UI.agLoc);
+  const today = isoDate(Date.now());
+  const cells = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(g0.getFullYear(), g0.getMonth(), g0.getDate() + i), key = isoDate(+d);
+    const evs = occ.filter((o) => isoDate(o.start) === key);
+    cells.push(`<div class="dc ${d.getMonth() !== m.getMonth() ? "out" : ""} ${key === today ? "today" : ""}" ${canEdit() ? `data-act="res-new" data-date="${key}"` : ""}><span class="dn">${d.getDate()}</span>
+      ${evs.map((o) => `<span class="chipev ${o.res.status === "pendente" ? "pend" : ""}" style="border-left-color:${esc(o.res.color || "#2F7CC1")}" data-act="res-open" data-id="${o.res.id}" data-idx="${o.index}" title="${esc(o.res.title)} · ${esc(nameOf("locations", o.res.locationId))}">${fmtHM(o.start)} ${esc(o.res.title)}</span>`).join("")}</div>`);
+  }
+  const pend = DB.reservations.filter((r) => r.status === "pendente");
+  return `<div class="between"><h1 style="margin:0">Agenda</h1>
+    <div class="row"><button class="btn" data-act="ag-mon" data-d="-1">◀</button><b style="min-width:150px;text-align:center">${m.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}</b><button class="btn" data-act="ag-mon" data-d="1">▶</button><button class="btn" data-act="ag-mon" data-d="0">Hoje</button>
+    <select data-change="ag-loc">${opt("", "Todas as salas", UI.agLoc)}${DB.locations.map((l) => opt(l.id, l.name, UI.agLoc)).join("")}</select>
+    ${canEdit() ? `<button class="btn primary" data-act="res-new">+ Reserva</button>` : ""}<button class="btn" data-act="ics">Exportar .ics</button></div></div>
+  <div class="cal">${["seg", "ter", "qua", "qui", "sex", "sáb", "dom"].map((d) => `<div class="dh">${d}</div>`).join("")}${cells.join("")}</div>
+  ${UI.role === "admin" && pend.length ? `<section class="card" style="margin-top:14px"><h2>Solicitações pendentes</h2><table><tr><th>Quando</th><th>Título</th><th>Sala</th><th></th></tr>
+    ${pend.map((r) => `<tr><td>${fmtDT(+new Date(r.start))}</td><td>${esc(r.title)}</td><td>${esc(nameOf("locations", r.locationId))}</td><td class="row end"><button class="btn sm primary" data-act="res-status" data-id="${r.id}" data-s="aprovada">Aprovar</button><button class="btn sm" data-act="res-status" data-id="${r.id}" data-s="negada">Negar</button></td></tr>`).join("")}</table></section>` : ""}
+  <p class="muted small" style="margin-top:10px">Clique num dia para reservar. Conflitos de sala no mesmo horário e de equipamentos permanentes são verificados; insumos não geram conflito. Reservas de docentes ficam pendentes até aprovação do administrador.</p>`;
+};
+
+function reservationForm(r, conflicts) {
+  const t0 = +new Date(r.start), t1 = +new Date(r.end);
+  return `<div class="f"><span>Título (sugestão: código do curso + cenário)</span><input name="title" required value="${esc(r.title)}"></div>
+  <div class="fg">
+    <label class="f"><span>Curso</span><select name="courseId">${opts("courses", r.courseId)}</select></label>
+    <label class="f"><span>Cenário</span><select name="scenarioId">${opts("scenarios", r.scenarioId)}</select></label>
+    <label class="f"><span>Sala</span><select name="locationId">${opts("locations", r.locationId)}</select></label>
+    <label class="f"><span>Cor</span><input type="color" name="color" value="${esc(r.color || "#2F7CC1")}"></label>
+    <label class="f"><span>Data</span><input type="date" name="date" value="${isoDate(t0)}" required></label>
+    <div class="row"><label class="f"><span>Início</span><input type="time" name="t1" value="${isoTime(t0)}" required></label><label class="f"><span>Fim</span><input type="time" name="t2" value="${isoTime(t1)}" required></label></div>
+    <label class="f"><span>Repetição</span><select name="freq">${[["nenhuma", "Não repete"], ["diaria", "Diária"], ["semanal", "Semanal"], ["mensal", "Mensal"]].map(([v, l]) => opt(v, l, (r.recur || {}).freq || "nenhuma")).join("")}</select></label>
+    <label class="f"><span>Repetir até (máx. 1 ano)</span><input type="date" name="until" value="${esc((r.recur || {}).until || "")}"></label>
+  </div>
+  <div class="f"><span>Simuladores, equipamentos e insumos</span><div class="checks">${DB.resources.map((x) => `<label><input type="checkbox" name="resourceIds" value="${x.id}" ${(r.resourceIds || []).includes(x.id) ? "checked" : ""}> ${esc(x.name)} <span class="muted small">(${x.kind === "capital" ? "permanente" : "insumo"})</span></label>`).join("") || `<span class="muted">Cadastre recursos em Configurações.</span>`}</div></div>
+  <label class="f"><span>Observações</span><textarea name="notes">${esc(r.notes || "")}</textarea></label>
+  ${conflicts && conflicts.length ? `<div class="conf"><b>Conflito de agenda:</b><ul style="margin-left:18px">${conflicts.map((c) => `<li>${esc(c.reservation.title)} — ${fmtDT(c.at)} ${c.room ? "(mesma sala)" : ""} ${c.resources.length ? "(equipamento: " + c.resources.map((id) => esc(nameOf("resources", id))).join(", ") + ")" : ""}</li>`).join("")}</ul>
+    <label><input type="checkbox" name="override"> Reservar mesmo assim</label></div>` : ""}`;
+}
+function openReservation(r, idx) {
+  const isNew = !DB.reservations.includes(r);
+  const recurring = !isNew && r.recur && r.recur.freq && r.recur.freq !== "nenhuma";
+  const readonly = !canEdit();
+  if (readonly) {
+    return modal(r.title, `<p>${esc(nameOf("locations", r.locationId))} · ${fmtDT(+new Date(r.start))}–${fmtHM(+new Date(r.end))}</p><p class="muted">${esc(nameOf("courses", r.courseId))} · ${esc(nameOf("scenarios", r.scenarioId))}</p><p>${esc(r.notes || "")}</p>`);
+  }
+  const submit = (fd) => {
+    const date = fd.get("date"), s = new Date(`${date}T${fd.get("t1")}`), e = new Date(`${date}T${fd.get("t2")}`);
+    if (!(e > s)) { toast("O horário final deve ser depois do inicial."); return false; }
+    const cand = { ...r, title: fd.get("title").trim() || "Reserva", courseId: fd.get("courseId"), scenarioId: fd.get("scenarioId"), locationId: fd.get("locationId"),
+      color: fd.get("color"), start: s.toISOString(), end: e.toISOString(), resourceIds: fd.getAll("resourceIds"), notes: fd.get("notes"),
+      recur: { freq: fd.get("freq"), until: fd.get("until"), skip: (r.recur || {}).skip || [] } };
+    if (cand.recur.freq !== "nenhuma" && !cand.recur.until) { toast("Informe até quando a reserva se repete."); return false; }
+    const conf = C.findConflicts(DB.reservations, cand, DB.resources);
+    if (conf.length && !fd.get("override")) { show(cand, conf); return false; }
+    if (isNew) { cand.status = UI.role === "admin" ? "aprovada" : "pendente"; cand.createdBy = meLabel(); DB.reservations.push(cand); }
+    else Object.assign(r, cand);
+    save(); render(); toast(cand.status === "pendente" ? "Reserva enviada para aprovação." : "Reserva salva.");
+  };
+  const extra = isNew ? "" : `${r.scenarioId || r.locationId ? `<button type="button" class="btn rec-o" data-act="live-from-res" data-id="${r.id}">● Iniciar sessão</button>` : ""}
+    ${recurring ? `<button type="button" class="btn" data-act="res-del" data-id="${r.id}" data-idx="${idx}">Excluir esta ocorrência</button>` : ""}
+    <button type="button" class="btn" data-act="res-del" data-id="${r.id}">Excluir${recurring ? " série" : ""}</button>`;
+  const show = (data, conf) => modal(conf ? "Verificar conflito de agenda" : isNew ? "Nova reserva" : "Editar reserva", reservationForm(data, conf), { onSubmit: submit, extra });
+  show(r);
+}
+function newReservation(date) {
+  const d = date ? new Date(date + "T08:00") : new Date(); if (!date) { d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); }
+  openReservation({ id: C.uid("r"), title: "", start: d.toISOString(), end: new Date(+d + 2 * 3600000).toISOString(), resourceIds: [], recur: { freq: "nenhuma" } });
+}
+
+// ═════════════════════════════ CURSOS E PESSOAS ═══════════════════════════
+R.cursos = () => `<div class="between"><h1 style="margin:0">Cursos e pessoas</h1><div class="row"><button class="btn primary" data-act="course-new">+ Curso</button><button class="btn" data-act="person-new">+ Pessoa</button>
+  <label class="btn">Importar participantes (CSV)<input type="file" accept=".csv,text/csv" data-change="roster" hidden></label><button class="btn" data-act="people-csv">Exportar CSV</button></div></div>
+  <section class="card"><h2>Cursos</h2>${DB.courses.length ? `<div class="tbl"><table><tr><th>Código</th><th>Curso</th><th>Período</th><th>Estudantes</th><th>Docentes</th><th>Sessões</th></tr>
+    ${DB.courses.map((c) => `<tr class="click" data-act="course-open" data-id="${c.id}"><td>${esc(c.code)}</td><td>${esc(c.title)}</td><td>${esc(c.term || "")}</td><td>${(c.participantIds || []).length}</td><td>${(c.facultyIds || []).length}</td><td>${DB.sessions.filter((s) => s.courseId === c.id).length}</td></tr>`).join("")}</table></div>` : `<div class="empty">Nenhum curso</div>`}</section>
+  <section class="card"><h2>Pessoas (${DB.people.length})</h2>${DB.people.length ? `<div class="tbl"><table><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Sessões</th></tr>
+    ${[...DB.people].sort((a, b) => a.name.localeCompare(b.name, "pt-BR")).map((p) => `<tr class="click" data-act="person-open" data-id="${p.id}"><td>${esc(p.name)}</td><td>${esc(p.email || "")}</td><td>${esc(ROLES[p.role] || p.role)}</td><td>${DB.sessions.filter((s) => (s.participantIds || []).includes(p.id)).length}</td></tr>`).join("")}</table></div>` : `<div class="empty">Nenhuma pessoa cadastrada</div>`}</section>
+  <section class="card"><h2>Integração com o AVA (Moodle, Canvas, Blackboard)</h2>
+    <p class="muted">Sistemas comerciais sincronizam cursos e participantes pelo padrão LTI 1.3/LTI Advantage, que exige um servidor com chaves públicas (JWKS) e fluxo OpenID Connect. Esta versão funciona sem servidor e por isso faz a ponte por arquivo: exporte a lista de participantes do AVA em CSV (colunas <i>nome</i>, <i>email</i>, <i>papel</i>; a ordem pode variar) e importe aqui. Os resultados das avaliações podem ser exportados em CSV em <b>Relatórios</b> para lançamento no AVA.</p></section>`;
+
+function courseForm(c) {
+  const group = (role, field) => DB.people.filter((p) => p.role === role).map((p) => `<label><input type="checkbox" name="${field}" value="${p.id}" ${(c[field] || []).includes(p.id) ? "checked" : ""}> ${esc(p.name)}</label>`).join("") || `<span class="muted">Ninguém com este papel</span>`;
+  return `<div class="fg"><label class="f"><span>Código</span><input name="code" value="${esc(c.code || "")}"></label><label class="f"><span>Período</span><input name="term" value="${esc(c.term || "")}" placeholder="2026/2"></label></div>
+  <label class="f"><span>Título</span><input name="title" required value="${esc(c.title || "")}"></label>
+  <div class="f"><span>Estudantes</span><div class="checks">${group("estudante", "participantIds")}</div></div>
+  <div class="f"><span>Docentes</span><div class="checks">${group("docente", "facultyIds")}</div></div>`;
+}
+function openCourse(c) {
+  const isNew = !DB.courses.includes(c);
+  modal(isNew ? "Novo curso" : "Editar curso", courseForm(c), {
+    extra: isNew ? "" : `<button type="button" class="btn" data-act="course-del" data-id="${c.id}">Excluir</button>`,
+    onSubmit: (fd) => {
+      Object.assign(c, { code: fd.get("code").trim(), title: fd.get("title").trim() || "Curso", term: fd.get("term").trim(), participantIds: fd.getAll("participantIds"), facultyIds: fd.getAll("facultyIds") });
+      if (isNew) DB.courses.push(c); save(); render();
+    } });
+}
+function openPerson(p) {
+  const isNew = !DB.people.includes(p);
+  modal(isNew ? "Nova pessoa" : "Editar pessoa", `<label class="f"><span>Nome</span><input name="name" required value="${esc(p.name || "")}"></label>
+    <label class="f"><span>E-mail</span><input name="email" type="email" value="${esc(p.email || "")}"></label>
+    <label class="f"><span>Papel</span><select name="role">${Object.entries(ROLES).map(([k, v]) => opt(k, v, p.role || "estudante")).join("")}</select></label>`, {
+    extra: isNew ? "" : `<button type="button" class="btn" data-act="person-del" data-id="${p.id}">Excluir</button>`,
+    onSubmit: (fd) => {
+      const name = fd.get("name").trim(); if (!name) { toast("Informe o nome."); return false; }
+      Object.assign(p, { name, email: fd.get("email").trim(), role: fd.get("role") });
+      if (isNew) DB.people.push(p); save(); render();
+    } });
+}
+function importRoster(text) {
+  const rows = C.parseRosterCSV(text);
+  if (!rows.length) return toast("Nenhum participante encontrado no arquivo.");
+  let added = 0; const ids = [];
+  for (const r of rows) {
+    let p = r.email && DB.people.find((x) => x.email && x.email.toLowerCase() === r.email.toLowerCase());
+    if (!p) { p = { id: C.uid("p"), ...r }; DB.people.push(p); added++; }
+    ids.push(p);
+  }
+  save();
+  const courseSel = DB.courses.length ? `<label class="f"><span>Matricular também no curso</span><select name="course">${opts("courses", "", "(não matricular)")}</select></label>` : "";
+  modal("Importação concluída", `<p>${rows.length} linha(s) lida(s); ${added} pessoa(s) nova(s).</p>${courseSel}`, {
+    submit: "Concluir", onSubmit: (fd) => {
+      const c = byId("courses", fd.get("course"));
+      if (c) for (const p of ids) {
+        const field = p.role === "docente" ? "facultyIds" : "participantIds";
+        c[field] = [...new Set([...(c[field] || []), p.id])];
+      }
+      save(); render();
+    } });
+}
+
+// ═════════════════════════════ CENÁRIOS ═══════════════════════════════════
+R.cenarios = () => `<div class="between"><h1 style="margin:0">Cenários</h1><div class="row">
+  ${window.SCENARIO_PROGRAMS ? `<button class="btn" data-act="sc-import">Importar cenários do motor SimClin</button>` : ""}<button class="btn primary" data-act="sc-new">+ Cenário</button></div></div>
+  ${DB.scenarios.length ? `<div class="cols">${DB.scenarios.map((s) => `<section class="card click" style="cursor:pointer" data-act="sc-open" data-id="${s.id}">
+    <h2>${esc(s.title)}</h2><p class="muted small">${esc(s.simulator || "Sem simulador")} · ${(s.annotations || []).length} anotações pré-definidas · ${(s.evaluationIds || []).length} avaliação(ões)${+s.retentionDays ? ` · retenção ${s.retentionDays} dias` : ""}</p>
+    <p class="small">${esc(s.summary || "")}</p>
+    ${(s.refs || []).length ? `<p class="small muted" style="margin-top:6px"><b>Base:</b> ${s.refs.map((r) => esc(shortRef(r))).join("; ")}</p>` : ""}
+    <div class="row" style="margin-top:6px">${(s.annotations || []).slice(0, 8).map((a) => `<span class="tag" style="border-color:${esc(a.color)}">${esc(a.label)}</span>`).join("")}</div></section>`).join("")}</div>`
+  : `<div class="empty">Nenhum cenário. Crie um ou importe os cenários programados do SimClin.</div>`}
+  ${allRefs().length ? `<section class="card"><h2>Referências da biblioteca (${allRefs().length})</h2><ol class="small" style="padding-left:20px;display:grid;gap:6px">${allRefs().map((r) => `<li>${refHtml(r)}</li>`).join("")}</ol></section>` : ""}`;
+const allRefs = () => [...new Set([...DB.scenarios.flatMap((s) => s.refs || []), ...DB.evaluations.flatMap((e) => e.refs || [])])].sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+function openScenario(s) {
+  const isNew = !DB.scenarios.includes(s);
+  const annTxt = (s.annotations || []).map((a) => `${a.label} | ${a.cat || ""} | ${a.color || ""}`).join("\n");
+  modal(isNew ? "Novo cenário" : "Editar cenário", `<label class="f"><span>Título</span><input name="title" required value="${esc(s.title || "")}"></label>
+    <div class="fg"><label class="f"><span>Simulador / manequim</span><input name="simulator" value="${esc(s.simulator || "")}" placeholder="ex.: SimClin (monitor) + manequim adulto"></label>
+    <label class="f"><span>Retenção dos vídeos (dias; 0 = política global)</span><input type="number" min="0" name="retentionDays" value="${esc(s.retentionDays || 0)}"></label></div>
+    <label class="f"><span>Resumo do caso</span><textarea name="summary">${esc(s.summary || "")}</textarea></label>
+    <label class="f"><span>Objetivos de aprendizagem (um por linha)</span><textarea name="objectives">${esc((s.objectives || []).join("\n"))}</textarea></label>
+    <label class="f"><span>Anotações pré-definidas — uma por linha: <code>Rótulo | Categoria | #cor</code>. As nove primeiras ganham atalhos 1–9 na gravação.</span><textarea name="ann" style="min-height:140px;font-family:var(--mono);font-size:12px">${esc(annTxt)}</textarea></label>
+    <label class="f"><span>Referências (uma por linha)</span><textarea name="refs" style="min-height:60px;font-size:12px">${esc((s.refs || []).join("\n"))}</textarea></label>
+    <div class="f"><span>Avaliações vinculadas</span><div class="checks">${DB.evaluations.map((e) => `<label><input type="checkbox" name="evaluationIds" value="${e.id}" ${(s.evaluationIds || []).includes(e.id) ? "checked" : ""}> ${esc(e.title)} <span class="muted small">(${esc(e.type)})</span></label>`).join("") || `<span class="muted">Nenhuma avaliação criada</span>`}</div></div>`, {
+    extra: isNew ? "" : `<button type="button" class="btn" data-act="sc-copy" data-id="${s.id}">Duplicar</button><button type="button" class="btn" data-act="sc-del" data-id="${s.id}">Excluir</button>`,
+    onSubmit: (fd) => {
+      const annotations = fd.get("ann").split("\n").map((l) => l.split("|").map((x) => x.trim())).filter((p) => p[0])
+        .map(([label, cat, color]) => ({ id: C.uid("a"), label, cat: cat || "Geral", color: /^#[0-9a-f]{3,8}$/i.test(color || "") ? color : colorFor(cat || label) }));
+      Object.assign(s, { title: fd.get("title").trim() || "Cenário", simulator: fd.get("simulator").trim(), retentionDays: +fd.get("retentionDays") || 0,
+        summary: fd.get("summary").trim(), objectives: fd.get("objectives").split("\n").map((x) => x.trim()).filter(Boolean), annotations, evaluationIds: fd.getAll("evaluationIds"), refs: fd.get("refs").split("\n").map((x) => x.trim()).filter(Boolean) });
+      if (isNew) DB.scenarios.push(s); save(); render();
+    } });
+}
+const CRM_MARKERS = [["Comunicação em alça fechada", "Trabalho em equipe"], ["Liderança clara", "Trabalho em equipe"], ["Pedido de ajuda", "Trabalho em equipe"],
+  ["Erro / omissão", "Segurança do paciente"], ["Boa prática", "Destaque"], ["Ponto para o debriefing", "Debriefing"]];
+function importEngineScenarios(quiet) {
+  let n = 0;
+  for (const p of window.SCENARIO_PROGRAMS || []) {
+    if (DB.scenarios.some((s) => s.engineId === p.id)) continue;
+    const anns = [...(p.events || []).map((e) => [e.label, e.cat || "Intervenção"]), ...CRM_MARKERS]
+      .map(([label, cat]) => ({ id: C.uid("a"), label, cat, color: colorFor(cat) }));
+    DB.scenarios.push({ id: C.uid("sc"), engineId: p.id, title: p.title, simulator: "SimClin (monitor) – modo automático", summary: p.summary || "",
+      objectives: p.objectives || [], annotations: anns, evaluationIds: [], retentionDays: 0 });
+    n++;
+  }
+  if (quiet) return n;
+  save(); render(); toast(n ? `${n} cenário(s) importado(s).` : "Os cenários do motor já estavam importados.");
+}
+
+// ═════════════════════════════ AVALIAÇÕES ═════════════════════════════════
+R.avaliacoes = () => `<div class="between"><h1 style="margin:0">Avaliações</h1><button class="btn primary" data-act="ev-new">+ Avaliação</button></div>
+  ${DB.evaluations.length ? `<div class="tbl card"><table><tr><th>Título</th><th>Tipo</th><th>Itens</th><th>Pontos</th><th>Críticos</th><th>Respostas</th><th></th></tr>
+  ${DB.evaluations.map((e) => { const sc = C.scoreEvaluation(e, {}); const n = DB.sessions.reduce((a, s) => a + (s.results || []).filter((r) => r.evaluationId === e.id).length, 0);
+    return `<tr class="click" data-act="ev-open" data-id="${e.id}"><td>${esc(e.title)}${(e.refs || []).length ? `<span class="small muted" style="display:block">${e.refs.map((r) => esc(shortRef(r))).join("; ")}</span>` : ""}</td><td>${esc(EVAL_TYPES[e.type] || e.type)}</td><td>${e.items.length}</td><td>${sc.max}</td><td>${e.items.filter((i) => i.critical).length}</td><td>${n}</td>
+    <td><button class="btn sm" data-act="ev-print" data-id="${e.id}">Imprimir</button></td></tr>`; }).join("")}</table></div>`
+  : `<div class="empty">Nenhuma avaliação. Crie checklists de desempenho, escalas comportamentais, questionários pré/pós e formulários de reflexão.</div>`}
+  <p class="muted small">Tipos: questionários <b>antes</b> e <b>após</b> a sessão e <b>reflexão</b> são respondidos pelo estudante; <b>avaliador</b> (individual) e <b>monitoramento</b> (equipe) são preenchidos pelo docente durante ou após a gravação. Itens críticos não cumpridos sinalizam o resultado.</p>`;
+
+function itemRow(it) {
+  return `<div class="it" data-id="${esc(it.id || C.uid("i"))}"><input class="it-text" placeholder="Enunciado do item" value="${esc(it.text || "")}">
+    <select class="it-kind">${Object.entries(ITEM_KINDS).map(([k, v]) => opt(k, v, it.kind || "check")).join("")}</select>
+    <input class="it-pts" type="number" min="0" title="Pontos (check) ou máximo da escala" value="${esc(it.kind === "escala" ? it.max || 5 : it.points || 1)}">
+    <input class="it-opts opts" placeholder="Múltipla escolha: Adequado=2; Parcial=1; Inadequado=0" value="${esc((it.options || []).map((o) => `${o.label}=${o.points}`).join("; "))}">
+    <div class="ctl"><label><input type="checkbox" class="it-crit" ${it.critical ? "checked" : ""}> crítico</label><button type="button" class="btn sm" data-act="item-del">✕</button></div></div>`;
+}
+function openEvaluation(e) {
+  const isNew = !DB.evaluations.includes(e);
+  modal(isNew ? "Nova avaliação" : "Editar avaliação", `<label class="f"><span>Título</span><input name="title" required value="${esc(e.title || "")}"></label>
+    <label class="f"><span>Tipo</span><select name="type">${Object.entries(EVAL_TYPES).map(([k, v]) => opt(k, v, e.type || "avaliador")).join("")}</select></label>
+    <label class="f"><span>Instruções</span><textarea name="instructions" style="min-height:44px">${esc(e.instructions || "")}</textarea></label>
+    <label class="f"><span>Referências (uma por linha)</span><textarea name="refs" style="min-height:44px;font-size:12px">${esc((e.refs || []).join("\n"))}</textarea></label>
+    <h3>Itens</h3><div id="items">${(e.items || []).map(itemRow).join("")}</div>
+    <button type="button" class="btn" data-act="item-add">+ Item</button>`, {
+    extra: isNew ? "" : `<button type="button" class="btn" data-act="ev-del" data-id="${e.id}">Excluir</button>`,
+    onSubmit: (fd, form) => {
+      const items = $$(".it", form).map((row) => {
+        const kind = $(".it-kind", row).value, pts = +$(".it-pts", row).value || 0;
+        const it = { id: row.dataset.id, text: $(".it-text", row).value.trim(), kind, critical: $(".it-crit", row).checked };
+        if (kind === "check") it.points = pts || 1;
+        if (kind === "escala") it.max = pts || 5;
+        if (kind === "multipla") it.options = $(".it-opts", row).value.split(";").map((x) => x.split("=")).filter((p) => p[0].trim()).map(([l, p]) => ({ label: l.trim(), points: +p || 0 }));
+        return it;
+      }).filter((it) => it.text);
+      if (!items.length) { toast("Inclua ao menos um item."); return false; }
+      Object.assign(e, { title: fd.get("title").trim() || "Avaliação", type: fd.get("type"), instructions: fd.get("instructions").trim(), refs: fd.get("refs").split("\n").map((x) => x.trim()).filter(Boolean), items });
+      if (isNew) DB.evaluations.push(e); save(); render();
+    } });
+  if (!(e.items || []).length) $("#items").insertAdjacentHTML("beforeend", itemRow({}));
+}
+function evalFormHtml(ev, answers = {}, ro = false) {
+  const dis = ro ? "disabled" : "";
+  return `${ev.instructions ? `<p class="muted small">${esc(ev.instructions)}</p>` : ""}${ev.items.map((it, n) => {
+    const a = answers[it.id];
+    let ctl = "";
+    if (it.kind === "check") ctl = `<label><input type="checkbox" name="${it.id}" ${a === true ? "checked" : ""} ${dis}> Realizado <span class="muted small">(${it.points || 1} pt)</span></label>`;
+    if (it.kind === "escala") ctl = `<div class="opts">${Array.from({ length: (+it.max || 5) + 1 }, (_, v) => `<label><input type="radio" name="${it.id}" value="${v}" ${a !== undefined && +a === v ? "checked" : ""} ${dis}>${v}</label>`).join("")}</div>`;
+    if (it.kind === "multipla") ctl = `<div class="opts">${(it.options || []).map((o, i) => `<label><input type="radio" name="${it.id}" value="${i}" ${a !== undefined && a !== "" && +a === i ? "checked" : ""} ${dis}>${esc(o.label)}</label>`).join("")}</div>`;
+    if (it.kind === "texto") ctl = `<textarea name="${it.id}" ${dis}>${esc(a || "")}</textarea>`;
+    return `<div class="q"><div class="qt">${n + 1}. ${esc(it.text)}${it.critical ? `<span class="crit">● crítico</span>` : ""}</div>${ctl}</div>`;
+  }).join("")}`;
+}
+function readAnswers(form, ev) {
+  const out = {};
+  for (const it of ev.items) {
+    const el = form.elements[it.id];
+    if (!el) continue;
+    if (it.kind === "check") out[it.id] = el.checked;
+    else if (it.kind === "texto") out[it.id] = el.value.trim();
+    else { const r = $$(`input[name="${it.id}"]:checked`, form)[0]; if (r) out[it.id] = +r.value; }
+  }
+  return out;
+}
+function printEvaluation(ev, answers, header = "") {
+  const w = window.open("", "_blank");
+  if (!w) return toast("Permita janelas pop-up para imprimir.");
+  const sc = answers ? C.scoreEvaluation(ev, answers) : null;
+  w.document.write(`<!doctype html><meta charset="utf-8"><title>${esc(ev.title)}</title><style>body{font:14px system-ui;margin:30px;color:#111}h1{font-size:20px}.q{padding:8px 0;border-bottom:1px solid #ddd}.crit{color:#b00;font-size:11px;margin-left:6px}label{margin-right:12px}textarea{width:100%;min-height:60px}</style>
+    <h1>${esc(ev.title)}</h1><p>${esc(EVAL_TYPES[ev.type] || "")}${header}</p>${sc ? `<p><b>Pontuação: ${sc.points}/${sc.max} (${sc.pct ?? "—"}%)</b>${sc.criticalMissed.length ? ` — itens críticos não cumpridos: ${sc.criticalMissed.map(esc).join("; ")}` : ""}</p>` : ""}
+    ${evalFormHtml(ev, answers || {}, !!answers)}<script>print()<\/script>`);
+  w.document.close();
+}
+
+// ═════════════════════════════ SESSÃO AO VIVO ═════════════════════════════
+function freshLive() {
+  return { recording: false, setup: { title: "", courseId: "", scenarioId: "", locationId: "", pids: [], consent: false, reservationId: "" },
+    devices: [], mics: [], micId: "", sources: [], mic: null, sim: null, session: null, recorders: [], pending: [], t0: 0, timer: 0, tr: null, lastDraft: 0, storageErr: false };
+}
+let LIVE = freshLive();
+const liveT = () => (performance.now() - LIVE.t0) / 1000;
+function pickMime(audioOnly) {
+  if (!window.MediaRecorder) return "";
+  const list = audioOnly ? ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"]
+    : ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm", "video/mp4;codecs=avc1,mp4a", "video/mp4"];
+  return list.find((m) => MediaRecorder.isTypeSupported(m)) || "";
+}
+
+R.aovivo = () => LIVE.recording ? liveRecHtml() : liveSetupHtml();
+AFTER.aovivo = () => {
+  LIVE.sources.forEach((s) => { const v = $("#pv-" + s.id); if (v && v.srcObject !== s.stream) { v.srcObject = s.stream; v.play().catch(() => {}); } });
+  renderSim();
+  if (LIVE.recording) renderLiveLog();
+};
+
+function liveSetupHtml() {
+  const s = LIVE.setup, c = byId("courses", s.courseId);
+  const pool = c ? DB.people.filter((p) => (c.participantIds || []).includes(p.id)) : DB.people.filter((p) => p.role === "estudante" || p.role === "pe");
+  const served = /^https?:$/.test(location.protocol) || DB.settings.wsUrl;
+  const secure = window.isSecureContext;
+  const roomCams = (byId("locations", s.locationId) || {}).cameras || [];
+  return `<h1>Nova sessão ao vivo</h1>
+  ${!secure ? `<div class="conf">A câmera só funciona em contexto seguro (https:// ou http://localhost). Abra pelo servidor local ou por um endereço https.</div>` : ""}
+  <div class="cols">
+    <section class="card"><h2>1. Dados da sessão</h2>
+      <label class="f"><span>Título</span><input data-change="lv" name="title" value="${esc(s.title)}" placeholder="Padrão: data e hora"></label>
+      <div class="fg"><label class="f"><span>Curso</span><select data-change="lv" name="courseId">${opts("courses", s.courseId)}</select></label>
+      <label class="f"><span>Cenário</span><select data-change="lv" name="scenarioId">${opts("scenarios", s.scenarioId)}</select></label>
+      <label class="f"><span>Sala</span><select data-change="lv" name="locationId">${opts("locations", s.locationId)}</select></label></div>
+      <div class="f"><span>Participantes ${c ? "(herdados do curso)" : ""}</span><div class="checks">${pool.map((p) => `<label><input type="checkbox" data-change="lv-pid" value="${p.id}" ${s.pids.includes(p.id) ? "checked" : ""}> ${esc(p.name)}</label>`).join("") || `<span class="muted">Cadastre pessoas em Cursos e pessoas.</span>`}</div></div>
+      <label class="row" style="align-items:flex-start;gap:8px;margin-top:6px"><input type="checkbox" data-change="lv-consent" ${s.consent ? "checked" : ""} style="margin-top:3px">
+        <span class="small">Os participantes foram informados e consentiram com a gravação de imagem e voz para fins educacionais, com uso restrito ao debriefing e prazo de retenção definido (LGPD, Lei 13.709/2018, arts. 7º e 11).</span></label>
+    </section>
+    <section class="card"><h2>2. Ligação com o simulador</h2>
+      <p class="muted small">Entre na mesma sala de 4 dígitos usada pelo instrutor no SimClin. Sinais vitais, mudanças de estado e intervenções registradas no roteiro entram na linha do tempo da gravação.</p>
+      <div class="row"><input id="lv-room" inputmode="numeric" maxlength="4" placeholder="0000" style="width:90px;font:18px var(--mono);text-align:center" value="${esc((LIVE.sim || {}).room || "")}">
+        <button class="btn" data-act="sim-connect" ${served ? "" : "disabled"}>Conectar</button><button class="btn ghost" data-act="sim-close">Desligar</button><span id="sim-status" class="tag"></span></div>
+      ${served ? "" : `<p class="muted small">Disponível quando a página é aberta pelo servidor SimClin (npm start).</p>`}
+      <div id="sim-vitals" style="margin-top:10px"></div>
+    </section>
+  </div>
+  <section class="card"><h2>3. Fontes de vídeo e áudio (até 4 vídeos)</h2>
+    <div class="row" style="margin-bottom:10px"><button class="btn" data-act="src-detect">Detectar câmeras</button><button class="btn" data-act="src-screen">+ Capturar tela (monitor, ultrassom, PEP)</button><button class="btn" data-act="src-link">+ Câmera da sala por link</button><button class="btn" data-act="src-test">+ Fonte de teste</button>
+      <label class="small muted">Microfone <select data-change="lv-mic">${opt("", "Padrão do sistema", LIVE.micId)}${LIVE.mics.map((m, i) => opt(m.deviceId, m.label || "Microfone " + (i + 1), LIVE.micId)).join("")}${opt("none", "Sem áudio", LIVE.micId)}</select></label></div>
+    ${roomCams.length ? `<div class="row" style="margin-bottom:10px"><span class="small muted">Câmeras fixas da sala:</span>${roomCams.map((c) => { const used = LIVE.sources.some((x) => x.url === c.url);
+      return `<button class="btn sm rec-o" data-act="src-roomcam" data-id="${c.id}" ${used ? "disabled" : ""}>+ ${esc(c.label)}</button>`; }).join("")}</div>` : ""}
+    ${LIVE.devices.length ? `<div class="row" style="margin-bottom:10px">${LIVE.devices.map((d, i) => { const used = LIVE.sources.some((s) => s.deviceId === d.deviceId);
+      return `<button class="btn sm" data-act="src-cam" data-id="${esc(d.deviceId)}" data-label="${esc(d.label || "Câmera " + (i + 1))}" ${used ? "disabled" : ""}>+ ${esc(d.label || "Câmera " + (i + 1))}</button>`; }).join("")}</div>` : ""}
+    ${LIVE.sources.length ? `<div class="vgrid ${LIVE.sources.length === 1 ? "n1" : ""}" style="max-width:900px">${LIVE.sources.map((s) => `<div class="vtile"><video id="pv-${s.id}" muted playsinline autoplay></video>
+      <input class="lbl" data-change="src-label" data-id="${s.id}" value="${esc(s.label)}"><button class="btn sm x" data-act="src-del" data-id="${s.id}">✕</button></div>`).join("")}</div>`
+      : `<div class="empty">Nenhuma fonte. Use “Detectar câmeras” (webcams USB, celular como webcam), “Câmera da sala por link” (câmera IP fixa: WebRTC, HLS ou MJPEG) ou “Capturar tela” para gravar o monitor do paciente.</div>`}
+  </section>
+  <div class="row end"><button class="btn rec" data-act="rec-start" style="font-size:16px;padding:10px 20px">● Iniciar gravação</button></div>`;
+}
+
+function liveRecHtml() {
+  const ses = LIVE.session;
+  const lib = annLib(ses);
+  const evs = liveEvals(ses);
+  const n = LIVE.sources.length;
+  return `<div class="live-top"><span class="recdot"></span><b>GRAVANDO</b><span id="rec-clock">00:00</span><span class="muted">${esc(ses.title)} · ${esc(nameOf("locations", ses.locationId))}</span><span id="rec-size" class="tag"></span>
+    <span style="flex:1"></span><button class="btn rec" data-act="rec-stop">■ Encerrar gravação</button></div>
+  <div class="live-grid">
+    <div>${n ? `<div class="vgrid ${n === 1 ? "n1" : ""}">${LIVE.sources.map((s) => `<div class="vtile"><video id="pv-${s.id}" muted playsinline autoplay></video><span class="lbl">${esc(s.label)}</span></div>`).join("")}</div>` : `<div class="empty">Gravação sem vídeo: linha do tempo, áudio e dados do simulador.</div>`}
+      <div class="card" style="margin-top:10px"><div class="between" style="margin:0"><h2 style="margin:0">Simulador</h2><span id="sim-status" class="tag"></span></div><div id="sim-vitals" style="margin-top:8px"></div></div></div>
+    <aside class="card">
+      <div class="tabs"><button class="on" data-act="ltab" data-t="ann">Anotar</button><button data-act="ltab" data-t="log">Registro</button><button data-act="ltab" data-t="eval">Avaliar</button><button data-act="ltab" data-t="tr">Transcrição</button></div>
+      <div class="tp on" id="lt-ann"><div class="annbtns">${lib.map((a, i) => `<button class="btn" style="--c:${esc(a.color)}" data-act="ann-pre" data-i="${i}">${esc(a.label)}${i < 9 ? `<kbd>${i + 1}</kbd>` : ""}<br><span class="muted small">${esc(a.cat || "")}</span></button>`).join("")}</div>
+        <div class="row"><input id="ann-text" placeholder="Anotação livre (Enter)" style="flex:1"><button class="btn" data-act="ann-free">+</button></div>
+        <p class="muted small" style="margin-top:6px">Atalhos: teclas 1–9 marcam as anotações acima no instante atual.</p>
+        <h3>Últimas</h3><ul class="log" id="live-log-short"></ul></div>
+      <div class="tp" id="lt-log"><ul class="log" id="live-log"></ul></div>
+      <div class="tp" id="lt-eval">${evs.length ? `<label class="f"><span>Instrumento</span><select id="lv-ev">${evs.map((e) => opt(e.id, e.title)).join("")}</select></label>
+        <label class="f"><span>Avaliado</span><select id="lv-subj">${opt("equipe", "Equipe")}${ses.participantIds.map((id) => opt(id, nameOf("people", id))).join("")}</select></label>
+        <button class="btn primary" data-act="lv-eval">Abrir formulário</button><ul class="plain" id="lv-results" style="margin-top:10px"></ul>`
+        : `<div class="empty">Vincule avaliações do tipo avaliador ou monitoramento ao cenário.</div>`}</div>
+      <div class="tp" id="lt-tr"><p class="muted small">Transcrição pelo reconhecimento de fala do navegador (pt-BR). No Chrome, o áudio é processado por serviço externo do provedor do navegador; use apenas com consentimento.</p>
+        <button class="btn" data-act="tr-toggle" id="tr-btn">${LIVE.tr ? "■ Parar transcrição" : "● Iniciar transcrição"}</button><ul class="log" id="tr-list" style="margin-top:8px"></ul></div>
+    </aside>
+  </div>`;
+}
+function liveEvals(ses) {
+  const sc = byId("scenarios", ses.scenarioId);
+  const pool = sc && (sc.evaluationIds || []).length ? sc.evaluationIds.map((id) => byId("evaluations", id)).filter(Boolean) : DB.evaluations;
+  return pool.filter((e) => e.type === "avaliador" || e.type === "monitor");
+}
+/** Biblioteca de anotações do cenário; sem cenário, os marcadores comportamentais genéricos. */
+function annLib(ses) {
+  const sc = byId("scenarios", ses.scenarioId);
+  return sc && sc.annotations && sc.annotations.length ? sc.annotations : CRM_MARKERS.map(([label, cat]) => ({ label, cat, color: colorFor(cat) }));
+}
+
+async function detectCams() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return toast("Este navegador não oferece acesso a câmeras neste endereço.");
+  try { const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); s.getTracks().forEach((t) => t.stop()); }
+  catch (e) { try { const s = await navigator.mediaDevices.getUserMedia({ video: true }); s.getTracks().forEach((t) => t.stop()); } catch (e2) { toast("Câmera indisponível ou permissão negada: " + e2.message); } }
+  const d = await navigator.mediaDevices.enumerateDevices();
+  LIVE.devices = d.filter((x) => x.kind === "videoinput"); LIVE.mics = d.filter((x) => x.kind === "audioinput");
+  if (!LIVE.devices.length) toast("Nenhuma câmera encontrada.");
+  render();
+}
+function addSource(src) {
+  if (LIVE.sources.length >= 4) { src.stream.getTracks().forEach((t) => t.stop()); return toast("Máximo de 4 fontes de vídeo por sessão."); }
+  src.id = C.uid("src"); LIVE.sources.push(src);
+  src.stream.getVideoTracks()[0]?.addEventListener("ended", () => { if (!LIVE.recording) { LIVE.sources = LIVE.sources.filter((x) => x !== src); if (UI.view === "aovivo") render(); } });
+  render();
+}
+async function addCam(deviceId, label) {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } } });
+    addSource({ label, kind: "camera", deviceId, stream });
+  } catch (e) { toast("Não foi possível abrir a câmera: " + e.message); }
+}
+async function addScreen() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) return toast("Captura de tela não suportada neste navegador.");
+  try { const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 15 }, audio: false }); addSource({ label: "Tela / monitor", kind: "tela", stream }); }
+  catch (e) { if (e.name !== "NotAllowedError") toast("Captura de tela cancelada: " + e.message); }
+}
+function testStream(label) {
+  const cv = document.createElement("canvas"); cv.width = 640; cv.height = 360;
+  const g = cv.getContext("2d"), hue = Math.floor(Math.random() * 360), t0 = performance.now();
+  const iv = setInterval(() => {
+    const t = (performance.now() - t0) / 1000;
+    g.fillStyle = `hsl(${hue},35%,14%)`; g.fillRect(0, 0, 640, 360);
+    g.fillStyle = `hsl(${hue},80%,60%)`; g.fillRect((t * 120) % 640, 300, 60, 20);
+    g.fillStyle = "#fff"; g.font = "bold 34px monospace"; g.fillText(label, 24, 110);
+    g.font = "64px monospace"; g.fillText(C.fmtClock(t) + "." + Math.floor((t % 1) * 10), 24, 200);
+    g.font = "18px monospace"; g.fillText(new Date().toLocaleTimeString("pt-BR"), 24, 250);
+  }, 66);
+  const stream = cv.captureStream(15);
+  stream.getVideoTracks()[0].addEventListener("ended", () => clearInterval(iv));
+  stream._stop = () => clearInterval(iv);
+  return stream;
+}
+function stopStream(s) { if (!s) return; s.getTracks().forEach((t) => t.stop()); if (s._stop) s._stop(); }
+
+// ── Câmera fixa da sala por link (câmera IP) ─────────────────────────────
+// WebRTC/WHEP entra direto como MediaStream; HLS, vídeo, MJPEG e snapshot são desenhados
+// num canvas (captureStream), o que exige que a câmera libere CORS. RTSP precisa de conversor.
+const CORS_MSG = "a câmera responde, mas não libera acesso entre origens (CORS). Ative CORS na câmera ou use um conversor (MediaMTX/go2rtc) com WebRTC ou HLS";
+const HLS_CDN = "https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.17/hls.min.js";
+function loadScript(src) {
+  return new Promise((ok, fail) => { const el = document.createElement("script"); el.src = src; el.onload = ok; el.onerror = () => fail(new Error("não foi possível carregar " + src)); document.head.appendChild(el); });
+}
+function camHolder() {
+  let h = $("#cam-holder");
+  if (!h) { h = document.createElement("div"); h.id = "cam-holder"; h.setAttribute("aria-hidden", "true"); h.style.cssText = "position:fixed;left:-10px;top:0;width:2px;height:2px;overflow:hidden;opacity:0;pointer-events:none"; document.body.appendChild(h); }
+  return h;
+}
+async function whepStream(url) {
+  const pc = new RTCPeerConnection();
+  pc.addTransceiver("video", { direction: "recvonly" }); pc.addTransceiver("audio", { direction: "recvonly" });
+  const stream = new MediaStream();
+  pc.ontrack = (e) => { if (!stream.getTracks().includes(e.track)) stream.addTrack(e.track); };
+  await pc.setLocalDescription(await pc.createOffer());
+  await new Promise((ok) => { if (pc.iceGatheringState === "complete") return ok(); const t = setTimeout(ok, 2000); pc.onicegatheringstatechange = () => { if (pc.iceGatheringState === "complete") { clearTimeout(t); ok(); } }; });
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/sdp" }, body: pc.localDescription.sdp });
+  if (!r.ok) { pc.close(); throw new Error(`servidor WHEP respondeu ${r.status}`); }
+  await pc.setRemoteDescription({ type: "answer", sdp: await r.text() });
+  await new Promise((ok, fail) => { const t0 = Date.now(); const iv = setInterval(() => { if (stream.getVideoTracks().length) { clearInterval(iv); ok(); } else if (Date.now() - t0 > 10000) { clearInterval(iv); fail(new Error("sem vídeo em 10 s")); } }, 100); })
+    .catch((e) => { pc.close(); throw e; });
+  stream._stop = () => pc.close();
+  return stream;
+}
+async function urlStream(cam) {
+  const kind = cam.kind && cam.kind !== "auto" ? cam.kind : C.detectStreamKind(cam.url);
+  if (kind === "webrtc") return whepStream(cam.url);
+  const holder = camHolder(), cv = document.createElement("canvas"), g = cv.getContext("2d");
+  let el, hls = null, poll = null;
+  if (kind === "mjpeg" || kind === "imagem") {
+    el = document.createElement("img"); el.crossOrigin = "anonymous"; el.decoding = "async";
+    const bust = () => cam.url + (cam.url.includes("?") ? "&" : "?") + "_t=" + Date.now();
+    el.src = kind === "imagem" ? bust() : cam.url;
+    if (kind === "imagem") poll = setInterval(() => { const n = new Image(); n.crossOrigin = "anonymous"; n.onload = () => { el.src = n.src; }; n.src = bust(); }, 500);
+  } else {
+    el = document.createElement("video"); el.crossOrigin = "anonymous"; el.muted = true; el.playsInline = true; el.autoplay = true;
+    if (kind === "hls" && !el.canPlayType("application/vnd.apple.mpegurl")) {
+      if (!window.Hls) await loadScript(HLS_CDN);
+      if (!window.Hls || !window.Hls.isSupported()) throw new Error("HLS não suportado neste navegador");
+      hls = new window.Hls({ liveDurationInfinity: true, lowLatencyMode: true }); hls.loadSource(cam.url); hls.attachMedia(el);
+    } else el.src = cam.url;
+    el.play().catch(() => {});
+  }
+  holder.appendChild(el);
+  const ready = () => (el.tagName === "IMG" ? el.complete && el.naturalWidth > 0 : el.readyState >= 2 && el.videoWidth > 0);
+  const cleanup = () => { clearInterval(poll); if (hls) hls.destroy(); if (el.tagName === "VIDEO") { el.pause(); el.removeAttribute("src"); el.load(); } else el.src = ""; el.remove(); };
+  try {
+    await new Promise((ok, fail) => {
+      const t0 = Date.now();
+      el.addEventListener("error", () => {
+        if (el.tagName !== "IMG") return fail(new Error("a câmera não respondeu, o formato não é suportado ou ela não libera CORS"));
+        // distingue câmera fora do ar de câmera sem CORS: tenta abrir sem pedir acesso entre origens
+        const probe = new Image(), t = setTimeout(() => { probe.src = ""; fail(new Error("a câmera não respondeu ou o formato não é suportado")); }, 5000);
+        probe.onload = () => { clearTimeout(t); probe.src = ""; fail(new Error(CORS_MSG)); };
+        probe.onerror = () => { clearTimeout(t); fail(new Error("a câmera não respondeu ou o formato não é suportado")); };
+        probe.src = cam.url;
+      }, { once: true });
+      if (hls) hls.on(window.Hls.Events.ERROR, (_, d) => { if (d.fatal) fail(new Error("erro HLS: " + d.details)); });
+      const iv = setInterval(() => { if (ready()) { clearInterval(iv); ok(); } else if (Date.now() - t0 > 12000) { clearInterval(iv); fail(new Error("sem imagem em 12 s")); } }, 100);
+    });
+    const w = el.videoWidth || el.naturalWidth, h = el.videoHeight || el.naturalHeight, sc = Math.min(1, 1280 / w);
+    cv.width = Math.round(w * sc) || 640; cv.height = Math.round(h * sc) || 360;
+    g.drawImage(el, 0, 0, cv.width, cv.height);
+    try { g.getImageData(0, 0, 1, 1); }
+    catch (e) { throw new Error(CORS_MSG); }
+  } catch (e) { cleanup(); throw e; }
+  const draw = setInterval(() => { if (ready()) g.drawImage(el, 0, 0, cv.width, cv.height); }, 1000 / 15);
+  const stream = cv.captureStream(15);
+  stream._stop = () => { clearInterval(draw); cleanup(); };
+  return stream;
+}
+async function addUrlCam(cam) {
+  const chk = C.checkCamUrl(cam.url, cam.kind, { protocol: location.protocol });
+  if (!chk.ok) return toast(chk.problems[0], 9000);
+  if (LIVE.sources.length >= 4) return toast("Máximo de 4 fontes de vídeo por sessão.");
+  if (LIVE.sources.some((s) => s.url === cam.url)) return toast("Essa câmera já está na sessão.");
+  toast(`Conectando a ${cam.label}…`, 12000);
+  try {
+    const stream = await urlStream(cam);
+    addSource({ label: cam.label, kind: "camera-ip", url: cam.url, camId: cam.id, stream });
+    toast(`${cam.label} conectada.`);
+  } catch (e) { toast(`Não foi possível abrir ${cam.label}: ${e.message}.`, 10000); }
+}
+const camKindOpts = (sel) => opt("auto", "Detectar pelo link", sel || "auto") + Object.entries(C.CAM_KINDS).map(([k, v]) => opt(k, v, sel)).join("");
+const CAM_HELP = `<p class="muted small">Formatos aceitos pelo navegador: <b>WebRTC (WHEP)</b>, <b>HLS (.m3u8)</b>, <b>MJPEG</b>, imagem atualizada (snapshot) e arquivo MP4/WebM.
+  Câmeras que só oferecem <b>RTSP</b> precisam de um conversor na rede da sala, como MediaMTX ou go2rtc, que publica o mesmo vídeo em WebRTC ou HLS
+  (ex.: <span class="mono">http://servidor:8889/sala1/whep</span> ou <span class="mono">http://servidor:8888/sala1/index.m3u8</span>).
+  Para HLS, MJPEG e snapshot a câmera ou o conversor precisa liberar CORS.</p>`;
+function camForm(c = {}) {
+  return `<label class="f"><span>Nome da câmera</span><input name="label" required value="${esc(c.label || "")}" placeholder="ex.: Câmera do teto – visão do leito"></label>
+    <label class="f"><span>Link da transmissão</span><input name="url" required value="${esc(c.url || "")}" placeholder="http://192.168.0.30:8889/sala1/whep" inputmode="url" autocomplete="off"></label>
+    <label class="f"><span>Tipo</span><select name="kind">${camKindOpts(c.kind)}</select></label>${CAM_HELP}`;
+}
+function openCamLink() {
+  const loc = byId("locations", LIVE.setup.locationId);
+  modal("Câmera da sala por link", camForm() + (loc ? `<label class="row small"><input type="checkbox" name="keep" checked> Salvar esta câmera na ${esc(loc.name)} para as próximas sessões</label>` : ""), {
+    submit: "Conectar",
+    onSubmit: (fd) => {
+      const cam = { id: C.uid("cam"), label: fd.get("label").trim() || "Câmera da sala", url: fd.get("url").trim(), kind: fd.get("kind") };
+      const chk = C.checkCamUrl(cam.url, cam.kind, { protocol: location.protocol });
+      if (!chk.ok) { toast(chk.problems[0], 9000); return false; }
+      if (loc && fd.get("keep")) { (loc.cameras = loc.cameras || []).push(cam); save(); }
+      addUrlCam(cam);
+    },
+  });
+}
+function openRoomCams(locId) {
+  const l = byId("locations", locId); if (!l) return;
+  const list = (l.cameras || []).map((c) => `<li class="between" style="margin:0"><span><b>${esc(c.label)}</b> <span class="tag info">${esc(C.CAM_KINDS[c.kind] || C.CAM_KINDS[C.detectStreamKind(c.url)] || "link")}</span><br><span class="mono small muted" style="word-break:break-all">${esc(c.url)}</span></span>
+    <button type="button" class="btn sm" data-act="cam-del" data-loc="${l.id}" data-id="${c.id}">✕</button></li>`).join("") || `<li class="muted">Nenhuma câmera cadastrada.</li>`;
+  modal(`Câmeras fixas · ${l.name}`, `<ul class="plain" style="margin-bottom:12px">${list}</ul><h3>Adicionar câmera</h3>${camForm()}`, {
+    submit: "Adicionar",
+    onSubmit: (fd) => {
+      const cam = { id: C.uid("cam"), label: fd.get("label").trim() || "Câmera da sala", url: fd.get("url").trim(), kind: fd.get("kind") };
+      const chk = C.checkCamUrl(cam.url, cam.kind, { protocol: location.protocol });
+      if (chk.kind === "rtsp" || chk.kind === "invalido") { toast(chk.problems[0], 9000); return false; }
+      if (!chk.ok) toast("Câmera salva, mas: " + chk.problems[0], 9000);
+      (l.cameras = l.cameras || []).push(cam); save(); render(); openRoomCams(l.id); return false;
+    },
+  });
+}
+
+async function recStart() {
+  const s = LIVE.setup;
+  if (!s.consent) return toast("Confirme o consentimento dos participantes antes de gravar.");
+  if (LIVE.sources.length && !window.MediaRecorder) return toast("Este navegador não grava vídeo (MediaRecorder ausente).");
+  let mic = null;
+  if (LIVE.micId !== "none" && navigator.mediaDevices) {
+    try { mic = await navigator.mediaDevices.getUserMedia({ audio: LIVE.micId ? { deviceId: { exact: LIVE.micId } } : true, video: false }); }
+    catch (e) { toast("Microfone indisponível; gravando sem áudio."); }
+  }
+  if (!LIVE.sources.length && !mic && !(LIVE.sim && LIVE.sim.status === "conectado")) {
+    stopStream(mic); return toast("Adicione uma câmera, o microfone ou conecte o simulador.");
+  }
+  LIVE.mic = mic;
+  const ses = { id: C.uid("s"), title: s.title.trim() || "Sessão " + fmtDT(Date.now()), courseId: s.courseId, scenarioId: s.scenarioId, locationId: s.locationId,
+    participantIds: [...s.pids], reservationId: s.reservationId, startedAt: Date.now(), duration: 0, media: [], annotations: [], samples: [], transcript: [], results: [],
+    notes: "", consent: true, createdBy: meLabel(), simRoom: LIVE.sim && LIVE.sim.status === "conectado" ? LIVE.sim.room : "" };
+  LIVE.session = ses; LIVE.t0 = performance.now(); LIVE.pending = []; LIVE.recorders = []; LIVE.storageErr = false;
+  const plan = LIVE.sources.map((src, i) => ({ label: src.label, kind: src.kind, tracks: [...src.stream.getVideoTracks(), ...(i === 0 && mic ? mic.getAudioTracks() : [])], hasAudio: i === 0 && !!mic }));
+  if (!plan.length && mic) plan.push({ label: "Áudio", kind: "audio", tracks: mic.getAudioTracks(), hasAudio: true, audioOnly: true });
+  for (const p of plan) {
+    const mime = pickMime(p.audioOnly), media = { id: C.uid("m"), label: p.label, kind: p.kind, mime, offset: 0, size: 0, chunks: 0, hasAudio: p.hasAudio };
+    let rec;
+    try { rec = new MediaRecorder(new MediaStream(p.tracks), mime ? { mimeType: mime, videoBitsPerSecond: 1500000, audioBitsPerSecond: 96000 } : undefined); }
+    catch (e) { toast(`Falha ao gravar ${p.label}: ${e.message}`); continue; }
+    media.mime = rec.mimeType || mime || "video/webm";
+    let seq = 0;
+    rec.ondataavailable = (e) => {
+      if (!e.data || !e.data.size) return;
+      media.size += e.data.size; media.chunks++;
+      LIVE.pending.push(putChunk(media.id, seq++, e.data).catch((err) => { if (!LIVE.storageErr) { LIVE.storageErr = true; toast("Armazenamento cheio ou indisponível: " + err.message, 6000); } }));
+    };
+    rec.onstart = () => { media.offset = Math.round(liveT() * 1000) / 1000; };
+    ses.media.push(media); LIVE.recorders.push(rec);
+  }
+  LIVE.recorders.forEach((r) => r.start(2000));
+  LIVE.recording = true;
+  if (LIVE.sim && LIVE.sim.vitals) C.pushSample(ses.samples, 0, LIVE.sim.vitals, 0);
+  if (LIVE.sim && LIVE.sim.status === "conectado") addAnn({ label: `Simulador ligado (sala ${LIVE.sim.room})`, cat: "Sistema", source: "simulador" });
+  LIVE.timer = setInterval(liveTick, 250);
+  kvPut("draft", ses).catch(() => {});
+  render();
+}
+function liveTick() {
+  if (!LIVE.recording) return;
+  const t = liveT(), ses = LIVE.session;
+  const c = $("#rec-clock"); if (c) c.textContent = C.fmtClock(t);
+  const sz = $("#rec-size"); if (sz) sz.textContent = ses.media.length ? fmtMB(ses.media.reduce((a, m) => a + m.size, 0)) : "sem vídeo";
+  if (LIVE.sim && LIVE.sim.vitals) C.pushSample(ses.samples, t, LIVE.sim.vitals, 5);
+  if (t - LIVE.lastDraft > 5) { LIVE.lastDraft = t; ses.duration = t; kvPut("draft", ses).catch(() => {}); }
+}
+async function recStop() {
+  if (!(await ask("Encerrar a gravação e abrir o debriefing?"))) return;
+  clearInterval(LIVE.timer); stopTranscript();
+  const ses = LIVE.session; ses.duration = Math.round(liveT() * 10) / 10;
+  toast("Finalizando gravação…");
+  await Promise.all(LIVE.recorders.map((r) => new Promise((res) => {
+    if (r.state === "inactive") return res();
+    r.addEventListener("stop", () => setTimeout(res, 50), { once: true });
+    try { r.stop(); } catch (e) { res(); }
+  })));
+  await Promise.allSettled(LIVE.pending);
+  ses.media = ses.media.filter((m) => m.chunks > 0);
+  DB.sessions.unshift(ses); save(); kvDel("draft").catch(() => {});
+  LIVE.sources.forEach((s) => stopStream(s.stream)); stopStream(LIVE.mic); simClose();
+  LIVE = freshLive();
+  go("sessao", ses.id);
+}
+function addAnn(a) {
+  const ses = LIVE.session; if (!ses) return;
+  ses.annotations.push({ id: C.uid("n"), t: Math.round(liveT() * 10) / 10, label: a.label, cat: a.cat || "", color: a.color || colorFor(a.cat || a.label), text: a.text || "",
+    source: a.source || "manual", author: a.source === "simulador" ? "Simulador" : meLabel() });
+  renderLiveLog();
+}
+function logItems(list, activeId, canDel) {
+  return list.map((a) => `<li class="${a.source === "simulador" ? "sim" : ""} ${a.id === activeId ? "act" : ""}" data-act="pb-seek" data-t="${a.t}" data-id="${a.id}">
+    <span class="tm">${C.fmtClock(a.t)}</span><span class="bar" style="background:${esc(a.color || "#555")}"></span>
+    <span class="txt"><b>${esc(a.label)}</b>${a.text ? " — " + esc(a.text) : ""}<br><span class="muted small">${esc(a.cat || "")}${a.author ? " · " + esc(a.author) : ""}</span></span>
+    ${canDel && a.source !== "simulador" && a.kind !== "result" ? `<button class="btn sm" data-act="ann-del" data-id="${a.id}" title="Excluir">✕</button>` : ""}</li>`).join("");
+}
+function renderLiveLog() {
+  const ses = LIVE.session; if (!ses) return;
+  const all = [...ses.annotations].reverse();
+  const l = $("#live-log"); if (l) l.innerHTML = logItems(all, null, true) || `<li class="muted">Sem registros</li>`;
+  const sh = $("#live-log-short"); if (sh) sh.innerHTML = logItems(all.filter((a) => a.source !== "simulador").slice(0, 6), null, false);
+  const r = $("#lv-results"); if (r) r.innerHTML = ses.results.map((x) => { const ev = byId("evaluations", x.evaluationId); const sc = ev ? C.scoreEvaluation(ev, x.answers) : {};
+    return `<li>${esc(ev ? ev.title : "?")} · ${esc(x.subjectId === "equipe" ? "Equipe" : nameOf("people", x.subjectId))} · <b>${sc.pct ?? "—"}%</b></li>`; }).join("");
+}
+
+// ── Simulador (sala WebSocket do SimClin) ───────────────────────────────
+function wsBase() {
+  if (DB.settings.wsUrl) return DB.settings.wsUrl;
+  if (location.protocol === "https:") return "wss://" + location.host;
+  if (location.protocol === "http:") return "ws://" + location.host;
+  return "";
+}
+function simConnect(room) {
+  if (!/^\d{4}$/.test(room)) return toast("Informe o código de 4 dígitos da sala.");
+  const url = wsBase(); if (!url) return toast("Abra esta página pelo servidor SimClin para ligar ao simulador.");
+  simClose();
+  let ws; try { ws = new WebSocket(url); } catch (e) { return toast("Endereço WebSocket inválido."); }
+  const sim = LIVE.sim = { ws, room, status: "conectando", vitals: null, retry: 0 };
+  ws.onopen = () => { ws.send(JSON.stringify({ type: "join", room, role: "captura" })); sim.status = "conectado"; renderSim(); };
+  ws.onmessage = (e) => {
+    let m; try { m = JSON.parse(e.data); } catch (x) { return; }
+    if (m.type === "state" && m.state) simState(m.state);
+    if (m.type === "event" && m.entry) simEvent(m.entry);
+  };
+  ws.onclose = () => {
+    if (LIVE.sim !== sim) return;
+    sim.status = "desconectado"; renderSim();
+    if (LIVE.recording && sim.retry++ < 10) setTimeout(() => { if (LIVE.sim === sim) { const keep = sim.vitals; simConnect(room); LIVE.sim.vitals = keep; } }, 2000);
+  };
+  ws.onerror = () => {};
+  renderSim();
+}
+function simClose() { const s = LIVE.sim; LIVE.sim = null; if (s && s.ws) { try { s.ws.close(); } catch (e) {} } renderSim(); }
+function simState(st) {
+  LIVE.sim.vitals = st;
+  if (LIVE.recording) C.pushSample(LIVE.session.samples, liveT(), st, 5);
+  renderSim();
+}
+function simEvent(en) {
+  if (!LIVE.recording) return;
+  const cat = SIM_CATS[en.kind] || "Simulador";
+  LIVE.session.annotations.push({ id: C.uid("n"), t: Math.round(liveT() * 10) / 10, simT: en.t, label: en.text, cat, color: en.kind === "evento" ? "#2F7CC1" : en.kind === "estado" ? "#7C3AED" : "#64748B",
+    text: "", source: "simulador", author: "Simulador", kind: en.kind });
+  renderLiveLog();
+}
+function vitalsHtml(v) {
+  if (!v) return `<span class="muted small">Sem dados do simulador</span>`;
+  const t = (label, val, color) => `<div><span>${label}</span><b style="color:${color}">${esc(val ?? "—")}</b></div>`;
+  return `<div class="vit">${t("FC (bpm)", v.hr, "var(--hr)")}${t("SpO₂ (%)", v.spo2, "var(--spo)")}${t("PA (mmHg)", v.sbp != null ? `${v.sbp}/${v.dbp}` : "—", "var(--bp)")}${t("FR (irpm)", v.rr, "var(--muted)")}${t("Temp (°C)", v.temp, "#DB2777")}${t("Ritmo", v.rhythm, "var(--text)")}</div>`;
+}
+function renderSim() {
+  const st = $("#sim-status"), sv = $("#sim-vitals");
+  const s = LIVE.sim;
+  if (st) { st.textContent = s ? `${s.status} · sala ${s.room}` : "desligado"; st.className = "tag " + (s && s.status === "conectado" ? "ok" : s ? "warn" : ""); }
+  if (sv) sv.innerHTML = vitalsHtml(s && s.vitals);
+}
+
+// ── Transcrição ao vivo (Web Speech API) ────────────────────────────────
+function startTranscript() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return toast("Reconhecimento de fala indisponível neste navegador (use Chrome ou Edge).");
+  const r = new SR(); r.lang = "pt-BR"; r.continuous = true; r.interimResults = false;
+  r.onresult = (e) => {
+    for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) {
+      const text = e.results[i][0].transcript.trim();
+      if (text) { LIVE.session.transcript.push({ t: Math.round(liveT() * 10) / 10, text }); renderTr(); }
+    }
+  };
+  r.onerror = (e) => { if (e.error === "not-allowed") { toast("Permissão de microfone negada para transcrição."); stopTranscript(); } };
+  r.onend = () => { if (LIVE.tr === r) try { r.start(); } catch (e) {} };
+  LIVE.tr = r; try { r.start(); } catch (e) {}
+  const b = $("#tr-btn"); if (b) b.textContent = "■ Parar transcrição";
+}
+function stopTranscript() { const r = LIVE.tr; LIVE.tr = null; if (r) try { r.stop(); } catch (e) {} const b = $("#tr-btn"); if (b) b.textContent = "● Iniciar transcrição"; }
+function renderTr() { const l = $("#tr-list"); if (l && LIVE.session) l.innerHTML = [...LIVE.session.transcript].reverse().map((x) => `<li><span class="tm">${C.fmtClock(x.t)}</span><span class="txt">${esc(x.text)}</span></li>`).join(""); }
+
+function openEvalFor(ses, evId, subjectId, onDone, tLive) {
+  const ev = byId("evaluations", evId); if (!ev) return;
+  const subj = subjectId === "equipe" ? "Equipe" : nameOf("people", subjectId);
+  modal(`${ev.title} — ${subj}`, evalFormHtml(ev), { submit: "Registrar", onSubmit: (fd, form) => {
+    const res = { id: C.uid("res"), evaluationId: ev.id, subjectId, evaluatorId: UI.me || "", evaluator: meLabel(), role: UI.role, answers: readAnswers(form, ev), submittedAt: Date.now() };
+    if (tLive !== undefined) res.t = tLive;
+    ses.results.push(res);
+    const sc = C.scoreEvaluation(ev, res.answers);
+    toast(`Registrado: ${sc.pct ?? "—"}%${sc.criticalMissed.length ? " · item crítico não cumprido" : ""}`);
+    save(); if (onDone) onDone();
+  } });
+}
+
+// ═════════════════════════════ SESSÕES ════════════════════════════════════
+R.sessoes = () => {
+  const q = UI.sesQ.toLowerCase();
+  const list = visibleSessions().filter((s) => (!UI.sesCourse || s.courseId === UI.sesCourse) && (!q || (s.title + " " + nameOf("scenarios", s.scenarioId)).toLowerCase().includes(q)))
+    .sort((a, b) => b.startedAt - a.startedAt);
+  return `<div class="between"><h1 style="margin:0">${UI.role === "estudante" ? "Minhas sessões" : "Sessões e debriefing"}</h1>
+    <div class="row"><input data-change="ses-q" placeholder="Buscar" value="${esc(UI.sesQ)}"><select data-change="ses-course">${opt("", "Todos os cursos", UI.sesCourse)}${DB.courses.map((c) => opt(c.id, c.title, UI.sesCourse)).join("")}</select></div></div>
+  ${list.length ? `<div class="card tbl"><table><tr><th>Data</th><th>Título</th><th>Curso</th><th>Cenário</th><th>Sala</th><th>Duração</th><th>Pessoas</th><th>Vídeos</th><th>Anotações</th><th>Avaliações</th></tr>
+    ${list.map((s) => `<tr class="click" data-act="ses-open" data-id="${s.id}"><td>${fmtDT(s.startedAt)}</td><td>${esc(s.title)}</td><td>${esc(nameOf("courses", s.courseId))}</td><td>${esc(nameOf("scenarios", s.scenarioId))}</td><td>${esc(nameOf("locations", s.locationId))}</td>
+    <td>${C.fmtClock(s.duration)}</td><td>${(s.participantIds || []).length}</td><td>${(s.media || []).filter((m) => !m.deleted).length}</td><td>${(s.annotations || []).filter((a) => a.source !== "simulador").length}</td><td>${(s.results || []).length}</td></tr>`).join("")}</table></div>`
+  : `<div class="empty">Nenhuma sessão encontrada.</div>`}`;
+};
+
+// ═════════════════════════════ VISUALIZADOR / DEBRIEFING ══════════════════
+let PB = null;
+R.sessao = () => {
+  const s = byId("sessions", UI.sel);
+  if (!s) return `<div class="empty">Sessão não encontrada. <button class="btn" data-act="go" data-v="sessoes">Voltar</button></div>`;
+  const media = s.media || [];
+  const main = Math.min(UI.main, Math.max(0, media.length - 1));
+  const tab = (id, label) => `<button class="${UI.vtab === id ? "on" : ""}" data-act="vtab" data-t="${id}">${label}</button>`;
+  return `<div class="between"><div><button class="btn sm" data-act="go" data-v="sessoes">← Sessões</button></div><div class="row">
+    <button class="btn" data-act="ses-print">Relatório da sessão</button>${canEdit() ? `<button class="btn" data-act="ses-edit">Editar dados</button>` : ""}</div></div>
+  <h1 style="margin-bottom:4px">${esc(s.title)}</h1>
+  <p class="muted small" style="margin-bottom:12px">${fmtDT(s.startedAt)} · ${C.fmtClock(s.duration)} · ${esc(nameOf("courses", s.courseId))} · ${esc(nameOf("scenarios", s.scenarioId))} · ${esc(nameOf("locations", s.locationId))}<br>
+    Participantes: ${(s.participantIds || []).map((id) => esc(nameOf("people", id))).join(", ") || "—"}</p>
+  <div class="player lay-${UI.layout} ${media.length === 1 ? "n1" : ""}" id="player" style="--n:${Math.max(1, media.length)}">
+    ${media.map((m, i) => `<div class="vbox ${i === main ? "main" : ""} ${m.deleted ? "gone" : ""}" data-act="pb-main" data-i="${i}"><video id="v-${i}" playsinline preload="auto" ${m.hasAudio ? "" : "muted"}></video><span class="vlabel">${esc(m.label)}${m.hasAudio ? " 🔊" : ""}</span></div>`).join("")
+      || `<div class="novideo">Sessão sem vídeo — use a linha do tempo e os dados do simulador abaixo.</div>`}
+    <div class="ovl" id="ovl"></div>
+  </div>
+  <div class="pctl"><button class="btn primary" data-act="pb-play" id="pb-play">▶</button><button class="btn" data-act="pb-skip" data-d="-10">−10 s</button><button class="btn" data-act="pb-skip" data-d="10">+10 s</button>
+    <span id="pb-time">00:00 / ${C.fmtClock(s.duration)}</span>
+    <select data-change="pb-rate">${[0.5, 1, 1.5, 2].map((r) => opt(r, r + "×", 1)).join("")}</select>
+    <select data-change="pb-layout">${[["grade", "Grade"], ["lado", "Lado a lado"], ["pip", "Imagem sobre imagem"], ["unica", "Câmera única"]].map(([v, l]) => opt(v, l, UI.layout)).join("")}</select>
+    <span style="flex:1"></span><button class="btn" data-act="pb-ann">+ Anotar neste ponto</button></div>
+  <div class="legend"><span><i style="background:var(--hr)"></i>FC</span><span><i style="background:var(--spo)"></i>SpO₂</span><span><i style="background:var(--bp)"></i>PAS</span><span>▮ anotações</span><span class="muted">clique ou arraste para navegar · espaço: reproduzir/pausar · ←/→: 5 s</span></div>
+  <canvas id="tl"></canvas>
+  <div class="cols" style="margin-top:14px">
+    <section class="card"><div class="between"><h2 style="margin:0">Eventos e anotações</h2><div class="row">${[["all", "Todos"], ["manual", "Anotações"], ["simulador", "Simulador"], ["result", "Avaliações"]].map(([f, l]) => `<button class="btn sm ${UI.pbFilter === f ? "primary" : ""}" data-act="pb-filter" data-f="${f}">${l}</button>`).join("")}</div></div>
+      <ul class="log" id="evlist" style="max-height:420px"></ul></section>
+    <section class="card"><div class="tabs">${tab("monitor", "Monitor")}${tab("aval", "Avaliações")}${tab("trans", "Transcrição")}${tab("notas", "Notas")}${tab("exp", "Exportar")}</div>
+      <div id="vtab">${vtabHtml(s)}</div></section>
+  </div>`;
+};
+function vtabHtml(s) {
+  if (UI.vtab === "monitor") return `<p class="muted small">Sinais do simulador no instante da reprodução.</p><div id="mon"></div>`;
+  if (UI.vtab === "aval") {
+    const evs = allowedEvals(s);
+    const subj = UI.role === "estudante" ? opt(UI.me, nameOf("people", UI.me)) : opt("equipe", "Equipe") + (s.participantIds || []).map((id) => opt(id, nameOf("people", id))).join("");
+    const rows = (s.results || []).filter((r) => UI.role !== "estudante" || r.subjectId === UI.me || r.subjectId === "equipe");
+    return `${rows.length ? `<div class="tbl"><table><tr><th>Instrumento</th><th>Avaliado</th><th>Por</th><th>Nota</th><th></th></tr>${rows.map((r) => { const ev = byId("evaluations", r.evaluationId); const sc = ev ? C.scoreEvaluation(ev, r.answers) : {};
+      return `<tr><td>${esc(ev ? ev.title : "?")}</td><td>${esc(r.subjectId === "equipe" ? "Equipe" : nameOf("people", r.subjectId))}</td><td>${esc(r.evaluator || "")}</td>
+      <td>${sc.max ? `<b>${sc.pct}%</b>` : "—"} ${sc.criticalMissed && sc.criticalMissed.length ? `<span class="tag bad">crítico</span>` : ""}</td><td><button class="btn sm" data-act="res-view" data-id="${r.id}">Ver</button></td></tr>`; }).join("")}</table></div>` : `<div class="empty">Nenhuma avaliação registrada</div>`}
+      ${evs.length ? `<h3>Preencher</h3><div class="row"><select id="v-ev">${evs.map((e) => opt(e.id, e.title)).join("")}</select><select id="v-subj">${subj}</select><button class="btn primary" data-act="res-new">Abrir</button></div>` : ""}`;
+  }
+  if (UI.vtab === "trans") return (s.transcript || []).length ? `<ul class="log">${s.transcript.map((x) => `<li data-act="pb-seek" data-t="${x.t}"><span class="tm">${C.fmtClock(x.t)}</span><span class="txt">${esc(x.text)}</span></li>`).join("")}</ul>` : `<div class="empty">Sem transcrição nesta sessão</div>`;
+  if (UI.vtab === "notas") return `<textarea data-change="ses-notes" style="min-height:220px" ${canEdit() ? "" : "disabled"} placeholder="Notas do debriefing (ex.: estrutura reação–análise–síntese, pontos-chave, plano de ação)">${esc(s.notes || "")}</textarea>`;
+  return `<ul class="plain">${(s.media || []).map((m, i) => `<li class="between" style="margin:0">${esc(m.label)} <span class="muted small">${fmtMB(m.size || 0)} · ${esc((m.mime || "").split(";")[0])}${m.deleted ? " · removido pela retenção" : ""}</span><button class="btn sm" data-act="dl-media" data-i="${i}" ${m.deleted ? "disabled" : ""}>Baixar</button></li>`).join("")}</ul>
+    <div class="row" style="margin-top:10px"><button class="btn" data-act="ses-csv">Registro de eventos (CSV)</button><button class="btn" data-act="ses-json">Sessão completa (JSON)</button>
+    ${UI.role === "admin" ? `<button class="btn danger" data-act="ses-del">Excluir sessão</button>` : ""}</div>`;
+}
+function allowedEvals(s) {
+  const sc = byId("scenarios", s.scenarioId);
+  const pool = sc && (sc.evaluationIds || []).length ? sc.evaluationIds.map((id) => byId("evaluations", id)).filter(Boolean) : DB.evaluations;
+  return UI.role === "estudante" ? pool.filter((e) => STUDENT_TYPES.includes(e.type)) : pool;
+}
+function sessionEvents(s) {
+  const res = (s.results || []).filter((r) => r.t !== undefined).map((r) => { const ev = byId("evaluations", r.evaluationId); return { id: r.id, t: r.t, label: "Avaliação: " + (ev ? ev.title : "?"), cat: r.subjectId === "equipe" ? "Equipe" : nameOf("people", r.subjectId), color: "#CA8A04", source: "result", kind: "result", author: r.evaluator }; });
+  return [...(s.annotations || []), ...res].sort((a, b) => a.t - b.t);
+}
+AFTER.sessao = () => { const s = byId("sessions", UI.sel); if (s) setupPlayback(s); };
+
+function setupPlayback(s) {
+  teardownPB();
+  PB = { s, t: 0, playing: false, rate: 1, dur: Math.max(1, s.duration || 0, ...(s.annotations || []).map((a) => a.t)), vids: [], urls: [], raf: 0, last: 0, ui: 0, drag: false };
+  (s.media || []).forEach(async (m, i) => {
+    const el = $("#v-" + i); if (!el || m.deleted) return;
+    const v = { el, m, offset: m.offset || 0, ready: false }; PB.vids[i] = v;
+    let chunks = [];
+    try { chunks = await getChunks(m.id); } catch (e) {}
+    if (!PB || PB.s !== s) return;
+    if (!chunks.length) { el.parentElement.classList.add("gone"); return; }
+    const url = URL.createObjectURL(new Blob(chunks, { type: (m.mime || "video/webm").split(";")[0] }));
+    PB.urls.push(url);
+    el.addEventListener("loadedmetadata", () => {
+      if (!isFinite(el.duration)) { // WebM do MediaRecorder sem duração: força o cálculo
+        el.currentTime = 1e7;
+        el.addEventListener("timeupdate", function fix() { el.removeEventListener("timeupdate", fix); el.currentTime = Math.max(0, PB ? PB.t - v.offset : 0); v.ready = true; });
+      } else { v.ready = true; el.currentTime = Math.max(0, PB.t - v.offset); }
+    }, { once: true });
+    el.src = url;
+  });
+  const cv = $("#tl");
+  const seekX = (e) => { const r = cv.getBoundingClientRect(); seek(((e.clientX - r.left) / r.width) * PB.dur); };
+  cv.addEventListener("pointerdown", (e) => { PB.drag = true; cv.setPointerCapture(e.pointerId); seekX(e); });
+  cv.addEventListener("pointermove", (e) => { if (PB && PB.drag) seekX(e); });
+  cv.addEventListener("pointerup", () => { if (PB) PB.drag = false; });
+  renderEvList(); updatePBUI(true);
+  PB.raf = requestAnimationFrame(pbLoop);
+}
+function teardownPB() {
+  if (!PB) return;
+  cancelAnimationFrame(PB.raf);
+  PB.vids.forEach((v) => { if (v) { v.el.pause(); v.el.removeAttribute("src"); v.el.load(); } });
+  PB.urls.forEach((u) => URL.revokeObjectURL(u));
+  PB = null;
+}
+function pbLoop(now) {
+  if (!PB) return;
+  const dt = PB.last ? Math.min(0.25, (now - PB.last) / 1000) : 0; PB.last = now;
+  if (PB.playing) { PB.t += dt * PB.rate; if (PB.t >= PB.dur) { PB.t = PB.dur; PB.playing = false; } }
+  syncVideos(false);
+  if (now - PB.ui > 100) { PB.ui = now; updatePBUI(); }
+  PB.raf = requestAnimationFrame(pbLoop);
+}
+function syncVideos(force) {
+  for (const v of PB.vids) {
+    if (!v || !v.ready) continue;
+    const el = v.el, local = PB.t - v.offset, d = isFinite(el.duration) ? el.duration : Infinity;
+    const inside = local >= 0 && local < d - 0.05;
+    el.parentElement.classList.toggle("idle", !inside);
+    if (PB.playing && inside) {
+      if (el.playbackRate !== PB.rate) el.playbackRate = PB.rate;
+      if (force || Math.abs(el.currentTime - local) > 0.4) el.currentTime = local;
+      if (el.paused) el.play().catch(() => {});
+    } else {
+      if (!el.paused) el.pause();
+      if (force) el.currentTime = Math.max(0, Math.min(local, d));
+    }
+  }
+}
+function seek(t) { if (!PB) return; PB.t = Math.max(0, Math.min(PB.dur, t)); syncVideos(true); updatePBUI(true); }
+function togglePlay() { if (!PB) return; if (PB.t >= PB.dur) PB.t = 0; PB.playing = !PB.playing; syncVideos(true); updatePBUI(true); }
+function updatePBUI(full) {
+  if (!PB) return;
+  const tEl = $("#pb-time"); if (tEl) tEl.textContent = `${C.fmtClock(PB.t)} / ${C.fmtClock(PB.dur)}`;
+  const pl = $("#pb-play"); if (pl) pl.textContent = PB.playing ? "❚❚" : "▶";
+  const smp = C.sampleAt(PB.s.samples, PB.t);
+  const ov = $("#ovl");
+  if (ov) ov.innerHTML = smp ? `<span style="color:var(--hr)">FC ${smp.hr ?? "—"}</span><span style="color:var(--spo)">SpO₂ ${smp.spo2 ?? "—"}</span><span style="color:var(--bp)">PA ${smp.sbp ?? "—"}/${smp.dbp ?? "—"}</span><span>FR ${smp.rr ?? "—"}</span>` : "";
+  const mon = $("#mon"); if (mon) mon.innerHTML = vitalsHtml(smp);
+  drawTimeline();
+  // destaca o último evento já ocorrido
+  const evs = filteredEvents(PB.s); let cur = null;
+  for (const e of evs) { if (e.t <= PB.t + 0.05) cur = e; else break; }
+  const id = cur ? cur.id : null;
+  if (full || id !== PB.curEv) {
+    PB.curEv = id;
+    $$("#evlist li").forEach((li) => li.classList.toggle("act", li.dataset.id === id));
+    if (PB.playing && id) { const li = $(`#evlist li[data-id="${id}"]`); if (li) li.scrollIntoView({ block: "nearest" }); }
+  }
+}
+function filteredEvents(s) {
+  const f = UI.pbFilter, all = sessionEvents(s);
+  if (f === "manual") return all.filter((a) => a.source !== "simulador" && a.source !== "result");
+  if (f === "simulador") return all.filter((a) => a.source === "simulador");
+  if (f === "result") return all.filter((a) => a.source === "result");
+  return all;
+}
+function renderEvList() {
+  const l = $("#evlist"); if (!l || !PB) return;
+  l.innerHTML = logItems(filteredEvents(PB.s), PB.curEv, canEdit()) || `<li class="muted">Sem eventos</li>`;
+}
+function drawTimeline() {
+  const cv = $("#tl"); if (!cv || !PB) return;
+  const s = PB.s, dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 600, h = 130;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  const css = getComputedStyle(document.documentElement), col = (n) => css.getPropertyValue(n).trim();
+  const X = (t) => (t / PB.dur) * w, top = 8, bot = 92;
+  // escala de tempo
+  const step = [10, 30, 60, 120, 300, 600, 900, 1800].find((x) => PB.dur / x <= 10) || 3600;
+  g.strokeStyle = col("--line"); g.fillStyle = col("--mute"); g.font = "10px monospace"; g.lineWidth = 1;
+  for (let t = 0; t <= PB.dur; t += step) { const x = Math.round(X(t)) + 0.5; g.beginPath(); g.moveTo(x, top); g.lineTo(x, bot); g.stroke(); g.fillText(C.fmtClock(t), x + 2, bot + 10); }
+  // sinais vitais (linhas em degrau)
+  const series = [["hr", "--hr", 0, 200], ["spo2", "--spo", 50, 100], ["sbp", "--bp", 0, 220]];
+  for (const [k, c, lo, hi] of series) {
+    const pts = (s.samples || []).filter((p) => p[k] !== undefined && p[k] !== null);
+    if (!pts.length) continue;
+    const Y = (v) => bot - ((Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo)) * (bot - top);
+    g.strokeStyle = col(c); g.lineWidth = 1.6; g.beginPath();
+    pts.forEach((p, i) => { const x = X(p.t), y = Y(p[k]); if (!i) g.moveTo(x, y); else { g.lineTo(x, Y(pts[i - 1][k])); g.lineTo(x, y); } });
+    g.lineTo(X(PB.dur), Y(pts[pts.length - 1][k])); g.stroke();
+  }
+  if (!(s.samples || []).length) { g.fillStyle = col("--mute"); g.font = "12px system-ui"; g.fillText("Sem dados do simulador nesta sessão", 10, 50); }
+  // marcadores
+  for (const a of sessionEvents(s)) {
+    const x = X(a.t); g.fillStyle = a.color || "#888";
+    if (a.source === "simulador") g.fillRect(x - 1, 108, 2, 8); else g.fillRect(x - 2, 104, 4, 20);
+  }
+  // cursor de reprodução
+  g.fillStyle = col("--text"); g.fillRect(X(PB.t) - 1, 0, 2, h);
+}
+function annotateAt(s, t) {
+  const lib = annLib(s);
+  const wasPlaying = PB && PB.playing; if (PB) { PB.playing = false; syncVideos(true); }
+  modal(`Anotação em ${C.fmtClock(t)}`, `<label class="f"><span>Marcador</span><select name="lib">${opt("", "(anotação livre)")}${lib.map((a, i) => opt(i, `${a.label} · ${a.cat}`)).join("")}</select></label>
+    <label class="f"><span>Título (se livre)</span><input name="label"></label><label class="f"><span>Comentário</span><textarea name="text"></textarea></label>`, {
+    onSubmit: (fd) => {
+      const a = lib[fd.get("lib")], label = a ? a.label : fd.get("label").trim();
+      if (!label && !fd.get("text").trim()) { toast("Escreva a anotação."); return false; }
+      s.annotations.push({ id: C.uid("n"), t: Math.round(t * 10) / 10, label: label || "Nota", cat: a ? a.cat : "Debriefing", color: a ? a.color : colorFor("Debriefing"), text: fd.get("text").trim(), source: "pos", author: meLabel() });
+      s.annotations.sort((x, y) => x.t - y.t); save(); renderEvList(); updatePBUI(true);
+    }, onClose: () => { if (PB && wasPlaying) togglePlay(); } });
+}
+function sessionCSV(s) {
+  const rows = [];
+  for (const a of sessionEvents(s)) rows.push({ t_s: a.t, relogio: C.fmtClock(a.t), tipo: a.source, categoria: a.cat, rotulo: a.label, comentario: a.text || "", autor: a.author || "" });
+  for (const p of s.samples || []) rows.push({ t_s: p.t, relogio: C.fmtClock(p.t), tipo: "sinais_vitais", categoria: p.rhythm || "", rotulo: `FC ${p.hr} SpO2 ${p.spo2} PA ${p.sbp}/${p.dbp} FR ${p.rr} T ${p.temp}`, comentario: "", autor: "Simulador" });
+  rows.sort((a, b) => a.t_s - b.t_s);
+  return C.toCSV(rows, ["t_s", "relogio", "tipo", "categoria", "rotulo", "comentario", "autor"]);
+}
+function printSession(s) {
+  const w = window.open("", "_blank"); if (!w) return toast("Permita janelas pop-up para imprimir.");
+  const res = (s.results || []).map((r) => { const ev = byId("evaluations", r.evaluationId); const sc = ev ? C.scoreEvaluation(ev, r.answers) : {};
+    return `<tr><td>${esc(ev ? ev.title : "?")}</td><td>${esc(r.subjectId === "equipe" ? "Equipe" : nameOf("people", r.subjectId))}</td><td>${esc(r.evaluator || "")}</td><td>${sc.max ? sc.points + "/" + sc.max + " (" + sc.pct + "%)" : "—"}</td><td>${esc((sc.criticalMissed || []).join("; "))}</td></tr>`; }).join("");
+  const sc = byId("scenarios", s.scenarioId);
+  w.document.write(`<!doctype html><meta charset="utf-8"><title>${esc(s.title)}</title><style>body{font:13px system-ui;margin:28px;color:#111}h1{font-size:20px}table{border-collapse:collapse;width:100%;margin:8px 0 18px}td,th{border:1px solid #ccc;padding:5px;text-align:left;vertical-align:top}th{background:#f2f2f2}</style>
+  <h1>${esc(s.title)}</h1><p>${fmtDT(s.startedAt)} · duração ${C.fmtClock(s.duration)} · ${esc(nameOf("courses", s.courseId))} · ${esc(nameOf("locations", s.locationId))}<br>Cenário: ${esc(nameOf("scenarios", s.scenarioId))}<br>Participantes: ${(s.participantIds || []).map((id) => esc(nameOf("people", id))).join(", ")}</p>
+  ${sc && (sc.objectives || []).length ? `<h2>Objetivos</h2><ul>${sc.objectives.map((o) => `<li>${esc(o)}</li>`).join("")}</ul>` : ""}
+  <h2>Avaliações</h2>${res ? `<table><tr><th>Instrumento</th><th>Avaliado</th><th>Avaliador</th><th>Pontuação</th><th>Itens críticos não cumpridos</th></tr>${res}</table>` : "<p>—</p>"}
+  <h2>Linha do tempo</h2><table><tr><th>Tempo</th><th>Tipo</th><th>Categoria</th><th>Registro</th><th>Autor</th></tr>${sessionEvents(s).map((a) => `<tr><td>${C.fmtClock(a.t)}</td><td>${esc(a.source)}</td><td>${esc(a.cat)}</td><td>${esc(a.label)}${a.text ? " — " + esc(a.text) : ""}</td><td>${esc(a.author || "")}</td></tr>`).join("")}</table>
+  ${s.notes ? `<h2>Notas do debriefing</h2><p style="white-space:pre-wrap">${esc(s.notes)}</p>` : ""}<script>print()<\/script>`);
+  w.document.close();
+}
+
+// ═════════════════════════════ RELATÓRIOS ═════════════════════════════════
+R.relatorios = () => {
+  const ses = DB.sessions.filter((s) => !UI.repCourse || s.courseId === UI.repCourse);
+  const u = C.usageReport(ses), lr = C.learnerReport(ses, DB.evaluations, DB.people), ar = C.annotationReport(ses);
+  const ev = byId("evaluations", UI.repEval) || DB.evaluations[0];
+  let items = "";
+  if (ev) {
+    const rs = ses.flatMap((s) => (s.results || []).filter((r) => r.evaluationId === ev.id));
+    items = `<div class="tbl"><table><tr><th>Item</th><th>Tipo</th><th>n</th><th>Desempenho médio</th></tr>${ev.items.filter((it) => it.kind !== "texto").map((it) => {
+      const m = C.itemMax(it), vals = rs.map((r) => C.scoreEvaluation({ items: [it] }, r.answers).points).filter((v, i) => rs[i].answers[it.id] !== undefined);
+      const pct = vals.length && m ? Math.round((vals.reduce((a, b) => a + b, 0) / (vals.length * m)) * 100) : null;
+      return `<tr><td>${esc(it.text)}${it.critical ? ` <span class="tag bad">crítico</span>` : ""}</td><td>${esc(ITEM_KINDS[it.kind])}</td><td>${vals.length}</td><td style="min-width:150px">${pct === null ? "—" : `<div class="bars"><div class="b" style="grid-template-columns:1fr 50px;margin:0"><div class="t"><i style="width:${pct}%;background:${pct < 60 ? "var(--bad)" : pct < 80 ? "var(--warn)" : "var(--acc)"}"></i></div><span class="v">${pct}%</span></div></div>`}</td></tr>`; }).join("")}</table></div>`;
+  }
+  return `<div class="between"><h1 style="margin:0">Relatórios</h1><div class="row"><select data-change="rep-course">${opt("", "Todos os cursos", UI.repCourse)}${DB.courses.map((c) => opt(c.id, c.title, UI.repCourse)).join("")}</select>
+    <button class="btn" data-act="rep-usage">Uso (CSV)</button><button class="btn" data-act="rep-learners">Desempenho (CSV)</button><button class="btn" data-act="rep-results">Resultados detalhados (CSV)</button></div></div>
+  <div class="kpis">${kpi("Sessões", u.sessions)}${kpi("Horas de simulação", fmtH(u.hours))}${kpi("Horas-participante", fmtH(u.personHours))}${kpi("Estudantes avaliados", lr.length)}</div>
+  <div class="cols3"><section class="card"><h2>Horas por sala</h2>${bars(u.location, (k) => nameOf("locations", k), fmtH)}</section>
+    <section class="card"><h2>Horas por curso</h2>${bars(u.course, (k) => nameOf("courses", k), fmtH)}</section>
+    <section class="card"><h2>Horas por mês</h2>${bars(u.month, (k) => k, fmtH)}</section></div>
+  <section class="card"><h2>Desempenho por estudante</h2>${lr.length ? `<div class="tbl"><table><tr><th>Estudante</th><th>Sessões</th><th>Avaliações</th><th>Média (%)</th><th>Mínimo (%)</th><th>Com item crítico</th></tr>
+    ${lr.map((r) => `<tr><td>${esc(r.name)}</td><td>${r.sessions}</td><td>${r.evaluations}</td><td><b>${r.mean}</b></td><td>${r.min}</td><td>${r.critical ? `<span class="tag bad">${r.critical}</span>` : "0"}</td></tr>`).join("")}</table></div>` : `<div class="empty">Sem avaliações pontuadas</div>`}
+    <p class="muted small" style="margin-top:6px">Avaliações de equipe são atribuídas a todos os participantes da sessão.</p></section>
+  <div class="cols"><section class="card"><h2>Análise por item</h2>${DB.evaluations.length ? `<select data-change="rep-eval" style="margin-bottom:10px">${DB.evaluations.map((e) => opt(e.id, e.title, ev && ev.id)).join("")}</select>${items}<p class="muted small">Itens abaixo de 60% indicam lacunas de aprendizagem a priorizar no currículo e no debriefing.</p>` : `<div class="empty">Sem avaliações</div>`}</section>
+    <section class="card"><h2>Anotações por categoria</h2>${bars(ar)}</section></div>`;
+};
+
+// ═════════════════════════════ CONFIGURAÇÕES ══════════════════════════════
+R.config = () => `<h1>Configurações</h1>
+  <div class="cols"><section class="card"><h2>Instituição e servidor</h2>
+    <label class="f"><span>Nome da instituição / centro de simulação</span><input data-change="set" name="institution" value="${esc(DB.settings.institution)}"></label>
+    <label class="f"><span>Endereço WebSocket do SimClin (vazio = mesmo servidor desta página)</span><input data-change="set" name="wsUrl" value="${esc(DB.settings.wsUrl)}" placeholder="wss://meu-simclin.exemplo.br"></label>
+    <h2 style="margin-top:14px">Retenção de vídeos</h2>
+    <label class="f"><span>Excluir vídeos após (dias; 0 = manter). Cenários podem definir prazo próprio.</span><input type="number" min="0" data-change="set" name="retentionDays" value="${esc(DB.settings.retentionDays)}"></label>
+    <button class="btn" data-act="retention">Aplicar retenção agora</button>
+    <p class="muted small" style="margin-top:6px">Os metadados, anotações e avaliações permanecem; apenas os arquivos de vídeo são apagados.</p></section>
+  <section class="card"><h2>Armazenamento</h2><p id="st-est" class="muted">Calculando…</p>${USE_MEM ? `<div class="conf">IndexedDB indisponível: os dados ficam só na memória e se perdem ao fechar a página.</div>` : ""}
+    <div class="row"><button class="btn" data-act="persist">Pedir armazenamento persistente</button></div>
+    <h2 style="margin-top:14px">Cópia de segurança</h2><p class="muted small">O arquivo JSON contém cadastros, agenda, sessões, anotações e avaliações (sem os vídeos; baixe-os em cada sessão).</p>
+    <div class="row"><button class="btn" data-act="backup">Exportar backup</button><label class="btn">Restaurar backup<input type="file" accept=".json,application/json" data-change="restore" hidden></label></div>
+    <h2 style="margin-top:14px">Dados</h2><div class="row"><button class="btn" data-act="demo">Carregar biblioteca de exemplo</button><button class="btn danger" data-act="wipe">Apagar tudo</button></div></section></div>
+  <section class="card"><div class="between"><h2 style="margin:0">Salas e recursos</h2><div class="row"><button class="btn" data-act="loc-new">+ Sala</button><button class="btn" data-act="resrc-new">+ Recurso</button></div></div>
+    <div class="cols"><ul class="plain">${DB.locations.map((l) => `<li class="between" style="margin:0"><span>${esc(l.name)}${(l.cameras || []).length ? ` <span class="tag info">${l.cameras.length} câmera(s)</span>` : ""}</span><span class="row"><button class="btn sm" data-act="loc-cams" data-id="${l.id}">Câmeras</button><button class="btn sm" data-act="loc-del" data-id="${l.id}">✕</button></span></li>`).join("") || `<li class="muted">Sem salas</li>`}</ul>
+    <ul class="plain">${DB.resources.map((r) => `<li class="between" style="margin:0">${esc(r.name)} <span class="tag">${r.kind === "capital" ? "permanente" : "insumo"}</span><button class="btn sm" data-act="resrc-del" data-id="${r.id}">✕</button></li>`).join("") || `<li class="muted">Sem recursos</li>`}</ul></div></section>`;
+AFTER.config = async () => {
+  const el = $("#st-est"); if (!el) return;
+  try {
+    const e = navigator.storage && navigator.storage.estimate ? await navigator.storage.estimate() : null;
+    const p = navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : false;
+    el.textContent = e ? `Em uso: ${fmtMB(e.usage || 0)} de ${fmtMB(e.quota || 0)} disponíveis neste navegador. Persistente: ${p ? "sim" : "não"}.` : "Estimativa indisponível neste navegador.";
+  } catch (x) { el.textContent = "Estimativa indisponível."; }
+};
+async function applyRetention(silent) {
+  const list = C.expiredMedia(DB.sessions, DB.scenarios, DB.settings.retentionDays);
+  let n = 0;
+  for (const s of list) for (const m of s.media) if (!m.deleted) { try { await delMedia(m.id); } catch (e) {} m.deleted = true; n++; }
+  if (n) save();
+  if (!silent || n) toast(n ? `${n} vídeo(s) removido(s) pela política de retenção.` : "Nenhum vídeo fora do prazo.");
+}
+
+// ═════════════════════════════ DADOS DE EXEMPLO ═══════════════════════════
+function seedBasics() {
+  DB.locations.push({ id: C.uid("l"), name: "Sala de simulação 1 (alta fidelidade)" }, { id: C.uid("l"), name: "Sala de simulação 2 (habilidades)" }, { id: C.uid("l"), name: "Sala de debriefing" });
+  DB.resources.push({ id: C.uid("rs"), name: "Manequim adulto de alta fidelidade", kind: "capital" }, { id: C.uid("rs"), name: "Monitor SimClin (tablet)", kind: "capital" },
+    { id: C.uid("rs"), name: "Câmera móvel", kind: "capital" }, { id: C.uid("rs"), name: "Kit de acesso venoso", kind: "consumivel" });
+}
+async function loadDemo() {
+  if (DB.sessions.length && !(await ask("Acrescentar a biblioteca de exemplo aos dados existentes?"))) return;
+  const B = window.HC_BIBLIOTECA;
+  if (!B) return toast("Biblioteca de exemplo indisponível.");
+  if (!DB.locations.length) seedBasics();
+  const addRes = (name, kind = "capital") => DB.resources.find((r) => r.name === name) || (DB.resources.push({ id: C.uid("rs"), name, kind }), DB.resources[DB.resources.length - 1]);
+  ["Simulador obstétrico de alta fidelidade", "Ventilador mecânico de treinamento", "Manequim de RCP com feedback", "DEA de treinamento", "Óculos de realidade virtual", "Incubadora de transporte"].forEach((n) => addRes(n));
+  addRes("Kit de sulfato de magnésio (simulado)", "consumivel");
+  const P = (name, role) => { const p = { id: C.uid("p"), name, email: name.toLowerCase().normalize("NFD").replace(/[^a-z ]/g, "").trim().replace(/\s+/g, ".") + "@exemplo.edu.br", role }; DB.people.push(p); return p; };
+  const st = ["Ana Souza", "Bruno Lima", "Carla Mendes", "Diego Rocha", "Elisa Prado", "Fábio Nunes", "Gabriela Reis", "Heitor Campos", "Isabela Freitas", "João Teles"].map((n) => P(n, "estudante"));
+  const fac = [P("Helena Martins", "docente"), P("Rafael Costa", "docente"), P("Juliana Alves", "docente")];
+  const pes = [P("Marcos Vieira", "pe"), P("Luana Bastos", "pe")];
+  // avaliações e cenários da biblioteca (referências completas ficam em cada item)
+  const ref = (keys) => (keys || []).map((k) => B.refs[k]).filter(Boolean);
+  const EV = {};
+  for (const e of B.evaluations) {
+    EV[e.key] = DB.evaluations.find((x) => x.libKey === e.key) || (() => {
+      const x = { id: C.uid("ev"), libKey: e.key, title: e.title, type: e.type, instructions: e.instructions || "", refs: ref(e.refs), items: e.items.map((it) => ({ id: C.uid("i"), ...it })) };
+      DB.evaluations.push(x); return x; })();
+  }
+  const SC = {};
+  for (const sc of B.scenarios) {
+    SC[sc.key] = DB.scenarios.find((x) => x.libKey === sc.key) || (() => {
+      const x = { id: C.uid("sc"), libKey: sc.key, title: sc.title, simulator: sc.simulator, summary: sc.summary, objectives: [...sc.objectives],
+        annotations: sc.annotations.map(([label, cat]) => ({ id: C.uid("a"), label, cat, color: colorFor(cat) })), evaluationIds: sc.evals.map((k) => EV[k].id),
+        retentionDays: sc.retentionDays || 0, refs: ref(sc.refs) };
+      DB.scenarios.push(x); return x; })();
+  }
+  // cenários programados do motor SimClin (sinais vitais ao vivo) entram no curso de urgência
+  const before = DB.scenarios.length;
+  if (window.SCENARIO_PROGRAMS) importEngineScenarios(true);
+  const engine = DB.scenarios.slice(before);
+  engine.forEach((x) => { if (!(x.evaluationIds || []).length) x.evaluationIds = [EV.debrief.id, EV.efet.id, EV.reflexao.id]; });
+  const CO = {};
+  B.courses.forEach((c, ci) => {
+    const students = c.key === "doc" ? [] : st.filter((_, i) => ci === 0 || i % 2 === (ci % 2 === 1 ? 0 : 1));
+    const x = { id: C.uid("c"), code: c.code, title: c.title, term: c.term, participantIds: c.key === "doc" ? fac.map((p) => p.id) : students.map((p) => p.id),
+      facultyIds: c.key === "doc" ? [fac[0].id] : [fac[ci % 3].id, fac[(ci + 1) % 3].id], scenarioIds: [...c.scenarios.map((k) => SC[k].id), ...(c.key === "urg" ? engine.map((e) => e.id) : [])] };
+    DB.courses.push(x); CO[c.key] = x;
+  });
+  // agenda: uma série semanal por curso e uma oficina docente aguardando aprovação
+  const L = DB.locations, R = (n) => DB.resources.find((r) => r.name === n)?.id;
+  const monday = new Date(); monday.setDate(monday.getDate() + ((8 - monday.getDay()) % 7 || 7)); monday.setHours(0, 0, 0, 0);
+  const until = isoDate(+monday + 63 * DAY);
+  const res = (course, sc, day, h, dur, loc, rs, color, extra = {}) => { const st0 = new Date(+monday + day * DAY + h * 3600000);
+    DB.reservations.push({ id: C.uid("r"), title: `${course.code} · ${sc.title.split(/[–(:]/)[0].trim()}`, courseId: course.id, scenarioId: sc.id, locationId: loc.id, resourceIds: rs.filter(Boolean), color,
+      start: st0.toISOString(), end: new Date(+st0 + dur * 3600000).toISOString(), recur: { freq: "semanal", until, skip: [] }, status: "aprovada", notes: "", ...extra }); };
+  res(CO.urg, SC.pcr, 0, 8, 2, L[0], [R("Manequim de RCP com feedback"), R("DEA de treinamento")], "#B91C1C");
+  res(CO.obs, SC.pe, 1, 13, 2, L[0], [R("Simulador obstétrico de alta fidelidade"), R("Kit de sulfato de magnésio (simulado)")], "#DB2777");
+  res(CO.com, SC.lgbt, 2, 8, 1.5, L[1], [], "#7C3AED");
+  res(CO.urg, SC.vm, 2, 14, 2, L[0], [R("Ventilador mecânico de treinamento"), R("Óculos de realidade virtual")], "#2F7CC1");
+  res(CO.pg, SC.osce, 3, 14, 3, L[1], [], "#0F766E");
+  res(CO.doc, SC.oficina, 4, 9, 2, L[2] || L[1], [], "#B45309", { status: "pendente", recur: { freq: "nenhuma" }, notes: "Solicitado pela coordenação" });
+  // sessão gravada sintética (sem vídeo): pré-eclâmpsia grave com crise convulsiva
+  const dur = 900, samples = [], lerp = (a, b, x) => a + (b - a) * Math.max(0, Math.min(1, x));
+  for (let t = 0; t <= dur; t += 5) {
+    const seiz = t >= 240 && t < 300, post = t >= 300;
+    samples.push({ t, rhythm: seiz ? "taquicardia sinusal" : "sinusal", temp: 36.8,
+      hr: Math.round(seiz ? 132 : post ? lerp(124, 98, (t - 300) / 400) : lerp(96, 104, t / 240)),
+      spo2: Math.round(seiz ? lerp(97, 86, (t - 240) / 50) : post ? lerp(88, 97, (t - 300) / 120) : 98),
+      sbp: Math.round(t < 420 ? lerp(168, 176, t / 300) : lerp(176, 148, (t - 420) / 300)), dbp: Math.round(t < 420 ? lerp(110, 114, t / 300) : lerp(114, 96, (t - 420) / 300)),
+      rr: Math.round(seiz ? 8 : post ? lerp(24, 18, (t - 300) / 300) : 18) });
+  }
+  const A = (t, label, cat, source = "manual", text = "") => ({ id: C.uid("n"), t, label, cat, color: source === "simulador" ? (cat === "Estado do cenário" ? "#7C3AED" : "#2F7CC1") : colorFor(cat), text, source, author: source === "simulador" ? "Simulador" : fac[0].name });
+  const team = CO.obs.participantIds.slice(0, 4);
+  const ses = { id: C.uid("s"), title: `${CO.obs.code} · Pré-eclâmpsia grave · Turma A`, courseId: CO.obs.id, scenarioId: SC.pe.id, locationId: L[0].id, participantIds: team,
+    startedAt: Date.now() - 2 * DAY, duration: dur, media: [], samples, consent: true, createdBy: fac[0].name,
+    transcript: [{ t: 40, text: "Pressão de cento e setenta por cento e doze, ela está com dor de cabeça e vendo pontos brilhantes" }, { t: 245, text: "Está convulsionando, vira de lado, proteção, oxigênio" },
+      { t: 330, text: "Iniciando sulfato de magnésio, dose de ataque" }, { t: 425, text: "Vamos tratar a pressão, hidralazina conforme protocolo" }, { t: 600, text: "Reflexo patelar presente, frequência respiratória dezoito" }],
+    annotations: [A(0, "Cenário iniciado", "Sistema", "simulador"), A(45, "Reconheceu gravidade", "Avaliação", "manual", "Identificou cefaleia e escotomas"), A(120, "Pedido de ajuda", "Trabalho em equipe"),
+      A(240, "→ Convulsão", "Estado do cenário", "simulador"), A(250, "Decúbito lateral / via aérea", "Intervenção", "manual", "Sem contenção, boa proteção"), A(270, "Ponto para o debriefing", "Debriefing", "manual", "Demorou a ofertar O₂"),
+      A(330, "Sulfato de magnésio", "Intervenção", "simulador"), A(420, "Anti-hipertensivo", "Intervenção", "simulador"), A(470, "Acolheu a gestante", "Comunicação", "manual", "Explicou o que aconteceu ao acompanhante"),
+      A(600, "Reflexo patelar avaliado", "Monitorização"), A(720, "Erro / omissão", "Segurança do paciente", "manual", "Não checou vitalidade fetal após a crise"), A(860, "→ Estabilização", "Estado do cenário", "simulador")],
+    results: [], notes: "Reação: grupo ansioso na convulsão (coerente com Uncu et al., 2025).\nAnálise: manejo seguro da crise; atraso no O₂ e na avaliação fetal.\nSíntese: checklist visual da eclâmpsia na sala e papéis definidos antes do cenário." };
+  const R0 = (ev, subj, answers, t, by = fac[0]) => ({ id: C.uid("res"), evaluationId: ev.id, subjectId: subj, evaluatorId: by.id, evaluator: by.name, role: by.role, submittedAt: ses.startedAt + dur * 1000,
+    answers: Object.fromEntries(ev.items.map((it, i) => [it.id, answers[i]]).filter((x) => x[1] !== undefined)), ...(t !== undefined ? { t } : {}) });
+  const who = (id) => DB.people.find((p) => p.id === id);
+  ses.results.push(
+    R0(EV.pe, team[0], [true, true, true, false, true, true, true, true, false, 3, "Ótima proteção na crise; ofertar O₂ mais cedo."], 760),
+    R0(EV.pe, team[1], [true, true, true, true, true, false, false, true, false, 2, "Revisar sinais de toxicidade do magnésio."]),
+    R0(EV.comMat, team[2], [4, 3, 4, 3, 2, 3, 4, "\"Vou ficar aqui com você enquanto cuidamos da pressão.\""]),
+    R0(EV.debrief, "equipe", [1, true, true, true, true, true, 0, 3, "Usar o vídeo da convulsão na fase de análise."], 880, fac[1]),
+    ...team.map((id, i) => R0(EV.ansiedade, id, [[3, 2, 4, 3], [4, 2, 3, 2], [2, 3, 4, 3], [3, 3, 3, 3]][i], undefined, who(id))),
+    R0(EV.reflexao, team[0], ["Fiquei assustada na convulsão, mas o grupo se organizou.", "Ofertaria oxigênio logo no início.", "Vou revisar o protocolo de sulfato de magnésio."], undefined, who(team[0])));
+  DB.sessions.unshift(ses);
+  if (!DB.settings.institution) DB.settings.institution = "Centro de Simulação Clínica";
+  save(); render(); toast(`Biblioteca carregada: ${B.courses.length} cursos, ${B.scenarios.length} cenários e ${B.evaluations.length} avaliações baseados em ${Object.keys(B.refs).length} referências.`, 6000);
+}
+const shortRef = (r) => { const y = (String(r).match(/\((\d{4})\)/) || [])[1] || "s.d."; const head = String(r).split(/\(\d{4}\)/)[0]; const first = head.split(",")[0].trim();
+  if (/^INACSL/.test(first)) { const t = (String(r).split(/\(\d{4}\)\.\s*/)[1] || "").split(". ")[0]; const m = t.match(/Practice®?\s*:?\s*(.+)$/);
+    const std = m ? m[1].replace(/:.*$/, "").replace(/®/g, "").trim() : "";
+    return `INACSL, ${y} – ${std || "Preâmbulo"}`; }
+  const second = (head.match(/&\s*([^,]+),/) || [])[1];
+  if (second && (head.match(/,/g) || []).length <= 3) return `${first} & ${second.trim()}, ${y}`;
+  return `${first}${/,.*(&|et al)/.test(head) ? " et al." : ""}, ${y}`; };
+const refHtml = (r) => { const doi = (String(r).match(/https:\/\/doi\.org\/\S+/) || [])[0]; return `${esc(doi ? r.replace(doi, "").trim() : r)}${doi ? ` <a href="${esc(doi)}" target="_blank" rel="noopener">${esc(doi.replace("https://", ""))}</a>` : ""}`; };
+
+// ═════════════════════════════ AÇÕES (delegação) ══════════════════════════
+const ACT = {
+  "go": (b) => go(b.dataset.v),
+  "theme": () => {
+    const dark = UI.theme ? UI.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    UI.theme = dark ? "light" : "dark"; applyTheme(); savePrefs(); if ($("#tl")) drawTimeline();
+  },
+  "modal-close": () => closeModal(),
+  "demo": () => loadDemo(),
+  // agenda
+  "ag-mon": (b) => { const d = +b.dataset.d, m = new Date(UI.agMonth); UI.agMonth = d ? +new Date(m.getFullYear(), m.getMonth() + d, 1) : Date.now(); render(); },
+  "res-open": (b, e) => { e.stopPropagation(); const r = byId("reservations", b.dataset.id); if (r) openReservation(r, +b.dataset.idx); },
+  "res-status": (b) => { const r = byId("reservations", b.dataset.id); if (r) { r.status = b.dataset.s; save(); render(); } },
+  "res-del": async (b) => {
+    const r = byId("reservations", b.dataset.id); if (!r) return;
+    if (b.dataset.idx !== undefined && +b.dataset.idx > 0) { r.recur.skip = [...(r.recur.skip || []), +b.dataset.idx]; }
+    else if (b.dataset.idx !== undefined) { // 1ª ocorrência da série: a série passa a começar na seguinte
+      const nx = C.expandRecurrence(r)[1];
+      if (nx) { const dur = +new Date(r.end) - +new Date(r.start); r.start = new Date(nx.start).toISOString(); r.end = new Date(nx.start + dur).toISOString(); r.recur.skip = (r.recur.skip || []).map((i) => i - nx.index).filter((i) => i > 0); }
+      else DB.reservations = DB.reservations.filter((x) => x !== r);
+    }
+    else { if (!(await ask("Excluir a reserva" + (r.recur && r.recur.freq !== "nenhuma" ? " e todas as ocorrências" : "") + "?"))) return; DB.reservations = DB.reservations.filter((x) => x !== r); }
+    save(); closeModal(); render();
+  },
+  "ics": () => {
+    const occ = occurrencesBetween(Date.now() - 30 * DAY, Date.now() + 366 * DAY).map((o) => ({ uid: o.res.id + "-" + o.index, start: o.start, end: o.end, title: o.res.title, location: nameOf("locations", o.res.locationId), description: [nameOf("courses", o.res.courseId), nameOf("scenarios", o.res.scenarioId), o.res.notes].filter((x) => x && x !== "—").join(" · ") }));
+    download("agenda-simulacao.ics", C.toICS(occ), "text/calendar;charset=utf-8");
+  },
+  "live-from-res": (b) => {
+    const r = byId("reservations", b.dataset.id); if (!r) return;
+    if (LIVE.recording) return toast("Já existe uma gravação em andamento.");
+    const c = byId("courses", r.courseId);
+    Object.assign(LIVE.setup, { title: r.title, courseId: r.courseId || "", scenarioId: r.scenarioId || "", locationId: r.locationId || "", pids: c ? [...(c.participantIds || [])] : [], reservationId: r.id });
+    closeModal(); go("aovivo");
+  },
+  // cursos e pessoas
+  "course-new": () => openCourse({ id: C.uid("c"), participantIds: [], facultyIds: [] }),
+  "course-open": (b) => openCourse(byId("courses", b.dataset.id)),
+  "course-del": async (b) => { if (!(await ask("Excluir o curso? As sessões permanecem."))) return; DB.courses = DB.courses.filter((c) => c.id !== b.dataset.id); save(); closeModal(); render(); },
+  "person-new": () => openPerson({ id: C.uid("p"), role: "estudante" }),
+  "person-open": (b) => openPerson(byId("people", b.dataset.id)),
+  "person-del": async (b) => { if (!(await ask("Excluir esta pessoa?"))) return; const id = b.dataset.id; DB.people = DB.people.filter((p) => p.id !== id); DB.courses.forEach((c) => { c.participantIds = (c.participantIds || []).filter((x) => x !== id); c.facultyIds = (c.facultyIds || []).filter((x) => x !== id); }); save(); closeModal(); render(); },
+  "people-csv": () => download("participantes.csv", C.toCSV(DB.people.map((p) => ({ nome: p.name, email: p.email, papel: p.role, cursos: DB.courses.filter((c) => [...(c.participantIds || []), ...(c.facultyIds || [])].includes(p.id)).map((c) => c.code || c.title).join(", ") }))), "text/csv;charset=utf-8"),
+  // cenários
+  "sc-new": () => openScenario({ id: C.uid("sc"), annotations: CRM_MARKERS.map(([label, cat]) => ({ id: C.uid("a"), label, cat, color: colorFor(cat) })), evaluationIds: [] }),
+  "sc-open": (b) => openScenario(byId("scenarios", b.dataset.id)),
+  "sc-import": () => importEngineScenarios(),
+  "sc-copy": (b) => { const s = byId("scenarios", b.dataset.id); const c = JSON.parse(JSON.stringify(s)); c.id = C.uid("sc"); c.title += " (cópia)"; delete c.engineId; DB.scenarios.push(c); save(); closeModal(); render(); },
+  "sc-del": async (b) => { if (!(await ask("Excluir o cenário?"))) return; DB.scenarios = DB.scenarios.filter((s) => s.id !== b.dataset.id); save(); closeModal(); render(); },
+  // avaliações
+  "ev-new": () => openEvaluation({ id: C.uid("ev"), type: "avaliador", items: [] }),
+  "ev-open": (b, e) => { if (e.target.closest("[data-act=ev-print]")) return; openEvaluation(byId("evaluations", b.dataset.id)); },
+  "ev-print": (b, e) => { e.stopPropagation(); printEvaluation(byId("evaluations", b.dataset.id)); },
+  "ev-del": async (b) => { if (!(await ask("Excluir a avaliação? Resultados já registrados deixarão de ser pontuados."))) return; DB.evaluations = DB.evaluations.filter((x) => x.id !== b.dataset.id); DB.scenarios.forEach((s) => (s.evaluationIds = (s.evaluationIds || []).filter((x) => x !== b.dataset.id))); save(); closeModal(); render(); },
+  "item-add": () => $("#items").insertAdjacentHTML("beforeend", itemRow({})),
+  "item-del": (b) => b.closest(".it").remove(),
+  // ao vivo
+  "src-detect": () => detectCams(),
+  "src-cam": (b) => addCam(b.dataset.id, b.dataset.label),
+  "src-screen": () => addScreen(),
+  "src-link": () => openCamLink(),
+  "src-roomcam": (b) => { const c = ((byId("locations", LIVE.setup.locationId) || {}).cameras || []).find((x) => x.id === b.dataset.id); if (c) addUrlCam(c); },
+  "loc-cams": (b) => openRoomCams(b.dataset.id),
+  "cam-del": (b) => { const l = byId("locations", b.dataset.loc); if (!l) return; l.cameras = (l.cameras || []).filter((c) => c.id !== b.dataset.id); save(); render(); openRoomCams(l.id); },
+  "src-test": () => addSource({ label: "Fonte de teste " + (LIVE.sources.length + 1), kind: "teste", stream: testStream("CÂMERA " + (LIVE.sources.length + 1)) }),
+  "src-del": (b) => { const s = LIVE.sources.find((x) => x.id === b.dataset.id); if (s) stopStream(s.stream); LIVE.sources = LIVE.sources.filter((x) => x !== s); render(); },
+  "sim-connect": () => simConnect(($("#lv-room") || {}).value || ""),
+  "sim-close": () => simClose(),
+  "rec-start": () => recStart(),
+  "rec-stop": () => recStop(),
+  "ltab": (b) => { $$(".tabs button", b.parentElement.parentElement).forEach((x) => x.classList.toggle("on", x === b)); $$(".tp").forEach((p) => p.classList.toggle("on", p.id === "lt-" + b.dataset.t)); if (b.dataset.t === "tr") renderTr(); },
+  "ann-pre": (b) => { const a = annLib(LIVE.session)[+b.dataset.i]; if (a) addAnn({ label: a.label, cat: a.cat, color: a.color, source: "pre" }); },
+  "ann-free": () => { const i = $("#ann-text"); const v = i.value.trim(); if (v) { addAnn({ label: v, cat: "Anotação livre", source: "manual" }); i.value = ""; } },
+  "ann-del": async (b, e) => {
+    e.stopPropagation();
+    const s = LIVE.recording ? LIVE.session : byId("sessions", UI.sel); if (!s) return;
+    if (!LIVE.recording && !(await ask("Excluir esta anotação?"))) return;
+    s.annotations = s.annotations.filter((a) => a.id !== b.dataset.id);
+    if (LIVE.recording) renderLiveLog(); else { save(); renderEvList(); updatePBUI(true); }
+  },
+  "lv-eval": () => openEvalFor(LIVE.session, $("#lv-ev").value, $("#lv-subj").value, renderLiveLog, Math.round(liveT() * 10) / 10),
+  "tr-toggle": () => LIVE.tr ? stopTranscript() : startTranscript(),
+  // visualizador
+  "ses-open": (b) => go("sessao", b.dataset.id),
+  "pb-play": () => togglePlay(),
+  "pb-skip": (b) => PB && seek(PB.t + +b.dataset.d),
+  "pb-seek": (b, e) => { if (e.target.closest("[data-act=ann-del]")) return; if (LIVE.recording) return; seek(+b.dataset.t); },
+  "pb-main": (b) => { if (UI.layout === "grade" || UI.layout === "lado") return; UI.main = +b.dataset.i; $$("#player .vbox").forEach((x) => x.classList.toggle("main", x === b)); },
+  "pb-filter": (b) => { UI.pbFilter = b.dataset.f; $$("[data-act=pb-filter]").forEach((x) => x.classList.toggle("primary", x === b)); renderEvList(); updatePBUI(true); },
+  "pb-ann": () => { const s = byId("sessions", UI.sel); if (s && PB) annotateAt(s, PB.t); },
+  "vtab": (b) => { UI.vtab = b.dataset.t; $$(".tabs button", b.parentElement).forEach((x) => x.classList.toggle("on", x === b)); $("#vtab").innerHTML = vtabHtml(byId("sessions", UI.sel)); updatePBUI(true); },
+  "res-view": (b) => { const s = byId("sessions", UI.sel); const r = (s.results || []).find((x) => x.id === b.dataset.id); const ev = r && byId("evaluations", r.evaluationId); if (!ev) return;
+    const sc = C.scoreEvaluation(ev, r.answers);
+    modal(`${ev.title} — ${r.subjectId === "equipe" ? "Equipe" : nameOf("people", r.subjectId)}`, `<p><b>${sc.points}/${sc.max} pontos (${sc.pct ?? "—"}%)</b> · ${esc(r.evaluator || "")} · ${fmtDT(r.submittedAt)}${r.t !== undefined ? ` · <a href="#" data-act="pb-seek" data-t="${r.t}">ir para ${C.fmtClock(r.t)}</a>` : ""}</p>
+      ${sc.criticalMissed.length ? `<div class="conf">Itens críticos não cumpridos: ${sc.criticalMissed.map(esc).join("; ")}</div>` : ""}${evalFormHtml(ev, r.answers, true)}`,
+      { extra: `<button type="button" class="btn" data-act="res-print" data-id="${r.id}">Imprimir</button>${canEdit() ? `<button type="button" class="btn" data-act="result-del" data-id="${r.id}">Excluir</button>` : ""}` }); },
+  "res-print": (b) => { const s = byId("sessions", UI.sel); const r = s.results.find((x) => x.id === b.dataset.id); const ev = byId("evaluations", r.evaluationId);
+    printEvaluation(ev, r.answers, ` · ${esc(s.title)} · ${esc(r.subjectId === "equipe" ? "Equipe" : nameOf("people", r.subjectId))} · ${esc(r.evaluator || "")}`); },
+  "result-del": async (b) => { if (!(await ask("Excluir este resultado?"))) return; const s = byId("sessions", UI.sel); s.results = s.results.filter((x) => x.id !== b.dataset.id); save(); closeModal(); $("#vtab").innerHTML = vtabHtml(s); renderEvList(); },
+  "dl-media": (b) => { const s = byId("sessions", UI.sel), m = s.media[+b.dataset.i]; getChunks(m.id).then((ch) => { if (!ch.length) return toast("Vídeo indisponível."); const ext = /mp4/.test(m.mime) ? "mp4" : "webm"; download(`${s.title} - ${m.label}.${ext}`.replace(/[\\/:*?"<>|]/g, "_"), new Blob(ch, { type: m.mime.split(";")[0] })); }); },
+  "ses-csv": () => { const s = byId("sessions", UI.sel); download(`${s.title}.csv`.replace(/[\\/:*?"<>|]/g, "_"), sessionCSV(s), "text/csv;charset=utf-8"); },
+  "ses-json": () => { const s = byId("sessions", UI.sel); download(`${s.title}.json`.replace(/[\\/:*?"<>|]/g, "_"), JSON.stringify({ session: s, scenario: byId("scenarios", s.scenarioId), evaluations: (s.results || []).map((r) => byId("evaluations", r.evaluationId)).filter((v, i, a) => v && a.indexOf(v) === i) }, null, 2), "application/json"); },
+  "ses-print": () => printSession(byId("sessions", UI.sel)),
+  "ses-del": async () => { const s = byId("sessions", UI.sel); if (!(await ask("Excluir a sessão, seus vídeos, anotações e avaliações? Esta ação não pode ser desfeita."))) return;
+    teardownPB(); for (const m of s.media || []) { try { await delMedia(m.id); } catch (e) {} } DB.sessions = DB.sessions.filter((x) => x !== s); save(); go("sessoes"); },
+  "ses-edit": () => { const s = byId("sessions", UI.sel);
+    modal("Editar dados da sessão", `<label class="f"><span>Título</span><input name="title" value="${esc(s.title)}"></label><div class="fg"><label class="f"><span>Curso</span><select name="courseId">${opts("courses", s.courseId)}</select></label>
+      <label class="f"><span>Cenário</span><select name="scenarioId">${opts("scenarios", s.scenarioId)}</select></label><label class="f"><span>Sala</span><select name="locationId">${opts("locations", s.locationId)}</select></label></div>
+      <div class="f"><span>Participantes</span><div class="checks">${DB.people.filter((p) => p.role === "estudante" || p.role === "pe").map((p) => `<label><input type="checkbox" name="pids" value="${p.id}" ${(s.participantIds || []).includes(p.id) ? "checked" : ""}> ${esc(p.name)}</label>`).join("")}</div></div>`,
+      { onSubmit: (fd) => { Object.assign(s, { title: fd.get("title").trim() || s.title, courseId: fd.get("courseId"), scenarioId: fd.get("scenarioId"), locationId: fd.get("locationId"), participantIds: fd.getAll("pids") }); save(); render(); } }); },
+  // relatórios
+  "rep-usage": () => { const ses = DB.sessions.filter((s) => !UI.repCourse || s.courseId === UI.repCourse);
+    download("uso-simulacao.csv", C.toCSV(ses.map((s) => ({ data: fmtDT(s.startedAt), titulo: s.title, curso: nameOf("courses", s.courseId), cenario: nameOf("scenarios", s.scenarioId), sala: nameOf("locations", s.locationId), duracao_min: (s.duration / 60).toFixed(1), participantes: (s.participantIds || []).length, horas_participante: ((s.duration / 3600) * (s.participantIds || []).length).toFixed(2), anotacoes: (s.annotations || []).filter((a) => a.source !== "simulador").length, avaliacoes: (s.results || []).length }))), "text/csv;charset=utf-8"); },
+  "rep-learners": () => { const ses = DB.sessions.filter((s) => !UI.repCourse || s.courseId === UI.repCourse);
+    download("desempenho-estudantes.csv", C.toCSV(C.learnerReport(ses, DB.evaluations, DB.people).map((r) => ({ estudante: r.name, email: (byId("people", r.personId) || {}).email || "", sessoes: r.sessions, avaliacoes: r.evaluations, media_pct: r.mean, minimo_pct: r.min, com_item_critico: r.critical }))), "text/csv;charset=utf-8"); },
+  "rep-results": () => { const rows = [];
+    for (const s of DB.sessions.filter((x) => !UI.repCourse || x.courseId === UI.repCourse)) for (const r of s.results || []) { const ev = byId("evaluations", r.evaluationId); if (!ev) continue; const sc = C.scoreEvaluation(ev, r.answers);
+      rows.push({ sessao: s.title, data: fmtDT(s.startedAt), instrumento: ev.title, tipo: ev.type, avaliado: r.subjectId === "equipe" ? "Equipe" : nameOf("people", r.subjectId), email: (byId("people", r.subjectId) || {}).email || "", avaliador: r.evaluator || "", pontos: sc.points, maximo: sc.max, pct: sc.pct ?? "", criticos_nao_cumpridos: sc.criticalMissed.join(" | ") }); }
+    download("resultados-avaliacoes.csv", C.toCSV(rows), "text/csv;charset=utf-8"); },
+  // configurações
+  "retention": () => applyRetention(false),
+  "persist": async () => { try { const ok = navigator.storage && navigator.storage.persist ? await navigator.storage.persist() : false; toast(ok ? "Armazenamento persistente concedido." : "O navegador não concedeu armazenamento persistente."); render(); } catch (e) { toast(e.message); } },
+  "backup": () => download(`simclin-captura-backup-${isoDate(Date.now())}.json`, JSON.stringify(DB, null, 1), "application/json"),
+  "wipe": async () => { if (!(await ask("Apagar TODOS os dados e vídeos deste navegador?")) || !(await ask("Confirma? Não há como desfazer."))) return;
+    if (USE_MEM) { MEM.kv.clear(); MEM.media.clear(); } else { await tx("media", "readwrite", (s) => s.clear()); await kvDel("db"); }
+    DB = emptyDB(); seedBasics(); save(); render(); toast("Dados apagados."); },
+  "loc-new": () => modal("Nova sala", `<label class="f"><span>Nome</span><input name="name" required></label>`, { onSubmit: (fd) => { const n = fd.get("name").trim(); if (!n) return false; DB.locations.push({ id: C.uid("l"), name: n }); save(); render(); } }),
+  "loc-del": async (b) => { if (!(await ask("Remover a sala?"))) return; DB.locations = DB.locations.filter((x) => x.id !== b.dataset.id); save(); render(); },
+  "resrc-new": () => modal("Novo recurso", `<label class="f"><span>Nome</span><input name="name" required></label><label class="f"><span>Tipo</span><select name="kind">${opt("capital", "Permanente (simulador, câmera, monitor)")}${opt("consumivel", "Insumo (consumível)")}</select></label>`,
+    { onSubmit: (fd) => { const n = fd.get("name").trim(); if (!n) return false; DB.resources.push({ id: C.uid("rs"), name: n, kind: fd.get("kind") }); save(); render(); } }),
+  "resrc-del": async (b) => { if (!(await ask("Remover o recurso?"))) return; DB.resources = DB.resources.filter((x) => x.id !== b.dataset.id); save(); render(); },
+};
+// "res-new" atende à agenda/painel (nova reserva) e ao visualizador (novo resultado)
+ACT["res-new"] = (b, e) => {
+  if (UI.view === "sessao") { const s = byId("sessions", UI.sel); return openEvalFor(s, $("#v-ev").value, $("#v-subj").value, () => { $("#vtab").innerHTML = vtabHtml(s); renderEvList(); updatePBUI(true); }); }
+  if (e.target.closest(".chipev")) return;
+  newReservation(b.dataset.date);
+};
+
+const CHG = {
+  "role": (el) => { UI.role = el.value; UI.me = ""; if (UI.view === "sessao") teardownPB(); savePrefs(); render(); },
+  "me": (el) => { UI.me = el.value; savePrefs(); if (UI.view === "sessao") teardownPB(); render(); },
+  "ag-loc": (el) => { UI.agLoc = el.value; savePrefs(); render(); },
+  "lv": (el) => { LIVE.setup[el.name] = el.value; if (el.name === "courseId") { const c = byId("courses", el.value); LIVE.setup.pids = c ? [...(c.participantIds || [])] : []; render(); }
+    if (el.name === "locationId") render(); },
+  "lv-pid": (el) => { const p = LIVE.setup.pids; if (el.checked) { if (!p.includes(el.value)) p.push(el.value); } else LIVE.setup.pids = p.filter((x) => x !== el.value); },
+  "lv-consent": (el) => { LIVE.setup.consent = el.checked; },
+  "lv-mic": (el) => { LIVE.micId = el.value; },
+  "src-label": (el) => { const s = LIVE.sources.find((x) => x.id === el.dataset.id); if (s) s.label = el.value.trim() || s.label; },
+  "ses-q": (el) => { UI.sesQ = el.value; render(); const i = $("[data-change=ses-q]"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); },
+  "ses-course": (el) => { UI.sesCourse = el.value; render(); },
+  "ses-notes": (el) => { const s = byId("sessions", UI.sel); if (s) { s.notes = el.value; save(); } },
+  "pb-rate": (el) => { if (PB) { PB.rate = +el.value; syncVideos(true); } },
+  "pb-layout": (el) => { UI.layout = el.value; savePrefs(); const p = $("#player"); p.className = p.className.replace(/lay-\w+/, "lay-" + UI.layout); },
+  "rep-course": (el) => { UI.repCourse = el.value; render(); },
+  "rep-eval": (el) => { UI.repEval = el.value; render(); },
+  "set": (el) => { DB.settings[el.name] = el.type === "number" ? +el.value || 0 : el.value.trim(); save(); },
+  "roster": (el) => { const f = el.files[0]; if (f) f.text().then(importRoster); el.value = ""; },
+  "restore": (el) => { const f = el.files[0]; if (!f) return; f.text().then(async (t) => { try { const d = JSON.parse(t); if (!d || !Array.isArray(d.sessions)) throw new Error("arquivo inválido"); if (!(await ask("Substituir os dados atuais pelo backup?"))) return; DB = Object.assign(emptyDB(), d); save(); render(); toast("Backup restaurado."); } catch (e) { toast("Não foi possível restaurar: " + e.message); } }); el.value = ""; },
+};
+
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act]");
+  if (!b || b.disabled) return;
+  const fn = ACT[b.dataset.act];
+  if (fn) { if (b.tagName === "A") e.preventDefault(); fn(b, e); }
+});
+document.addEventListener("change", (e) => { const el = e.target.closest("[data-change]"); if (el && CHG[el.dataset.change]) CHG[el.dataset.change](el); });
+document.addEventListener("keydown", (e) => {
+  const typing = /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) && e.target.type !== "checkbox" && e.target.type !== "radio";
+  if (!$("#ask").hidden) { if (e.key === "Escape" && ask.close) ask.close(); return; }
+  if (e.key === "Escape" && !$("#modal").hidden) return closeModal();
+  if (!$("#modal").hidden) return;
+  if (LIVE.recording) {
+    if (e.target.id === "ann-text" && e.key === "Enter") { e.preventDefault(); ACT["ann-free"](); return; }
+    if (!typing && /^[1-9]$/.test(e.key)) { const b = $$("[data-act=ann-pre]")[+e.key - 1]; if (b) { b.click(); b.animate([{ opacity: .4 }, { opacity: 1 }], 300); } }
+    return;
+  }
+  if (UI.view === "sessao" && PB && !typing) {
+    if (e.key === " ") { e.preventDefault(); togglePlay(); }
+    if (e.key === "ArrowLeft") seek(PB.t - 5);
+    if (e.key === "ArrowRight") seek(PB.t + 5);
+  }
+});
+window.addEventListener("beforeunload", (e) => { if (LIVE.recording) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("resize", () => { if (PB) drawTimeline(); });
+
+// ═════════════════════════════ INÍCIO ═════════════════════════════════════
+(async function boot() {
+  loadPrefs(); applyTheme(); tick(); setInterval(tick, 15000);
+  try { if (!window.indexedDB) throw new Error("sem IndexedDB"); await idb(); } catch (e) { USE_MEM = true; }
+  try { DB = await kvGet("db"); } catch (e) { DB = null; }
+  if (!DB) { DB = emptyDB(); seedBasics(); save(); }
+  DB = Object.assign(emptyDB(), DB); DB.settings = Object.assign(emptyDB().settings, DB.settings);
+  try { // recupera gravação interrompida (fechamento da aba, queda de energia)
+    const draft = await kvGet("draft");
+    if (draft && !DB.sessions.some((s) => s.id === draft.id)) {
+      draft.title += " (recuperada)";
+      for (const m of draft.media) { const ch = await getChunks(m.id); m.chunks = ch.length; m.size = ch.reduce((a, b) => a + b.size, 0); }
+      draft.media = draft.media.filter((m) => m.chunks);
+      DB.sessions.unshift(draft); save(); setTimeout(() => toast("Uma gravação interrompida foi recuperada em Sessões.", 6000), 300);
+    }
+    if (draft) await kvDel("draft");
+  } catch (e) {}
+  if (UI.view === "sessao" && !byId("sessions", UI.sel)) UI.view = "painel";
+  if (UI.view === "aovivo" && UI.role === "estudante") UI.view = "painel";
+  render();
+  applyRetention(true);
+})();
+</script>
+</body>
+</html>
