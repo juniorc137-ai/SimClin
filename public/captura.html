@@ -841,6 +841,7 @@ function liveSetupHtml() {
   const pool = c ? DB.people.filter((p) => (c.participantIds || []).includes(p.id)) : DB.people.filter((p) => p.role === "estudante" || p.role === "pe");
   const served = /^https?:$/.test(location.protocol) || DB.settings.wsUrl;
   const secure = window.isSecureContext;
+  const roomCams = (byId("locations", s.locationId) || {}).cameras || [];
   return `<h1>Nova sessão ao vivo</h1>
   ${!secure ? `<div class="conf">A câmera só funciona em contexto seguro (https:// ou http://localhost). Abra pelo servidor local ou por um endereço https.</div>` : ""}
   <div class="cols">
@@ -862,13 +863,15 @@ function liveSetupHtml() {
     </section>
   </div>
   <section class="card"><h2>3. Fontes de vídeo e áudio (até 4 vídeos)</h2>
-    <div class="row" style="margin-bottom:10px"><button class="btn" data-act="src-detect">Detectar câmeras</button><button class="btn" data-act="src-screen">+ Capturar tela (monitor, ultrassom, PEP)</button><button class="btn" data-act="src-test">+ Fonte de teste</button>
+    <div class="row" style="margin-bottom:10px"><button class="btn" data-act="src-detect">Detectar câmeras</button><button class="btn" data-act="src-screen">+ Capturar tela (monitor, ultrassom, PEP)</button><button class="btn" data-act="src-link">+ Câmera da sala por link</button><button class="btn" data-act="src-test">+ Fonte de teste</button>
       <label class="small muted">Microfone <select data-change="lv-mic">${opt("", "Padrão do sistema", LIVE.micId)}${LIVE.mics.map((m, i) => opt(m.deviceId, m.label || "Microfone " + (i + 1), LIVE.micId)).join("")}${opt("none", "Sem áudio", LIVE.micId)}</select></label></div>
+    ${roomCams.length ? `<div class="row" style="margin-bottom:10px"><span class="small muted">Câmeras fixas da sala:</span>${roomCams.map((c) => { const used = LIVE.sources.some((x) => x.url === c.url);
+      return `<button class="btn sm rec-o" data-act="src-roomcam" data-id="${c.id}" ${used ? "disabled" : ""}>+ ${esc(c.label)}</button>`; }).join("")}</div>` : ""}
     ${LIVE.devices.length ? `<div class="row" style="margin-bottom:10px">${LIVE.devices.map((d, i) => { const used = LIVE.sources.some((s) => s.deviceId === d.deviceId);
       return `<button class="btn sm" data-act="src-cam" data-id="${esc(d.deviceId)}" data-label="${esc(d.label || "Câmera " + (i + 1))}" ${used ? "disabled" : ""}>+ ${esc(d.label || "Câmera " + (i + 1))}</button>`; }).join("")}</div>` : ""}
     ${LIVE.sources.length ? `<div class="vgrid ${LIVE.sources.length === 1 ? "n1" : ""}" style="max-width:900px">${LIVE.sources.map((s) => `<div class="vtile"><video id="pv-${s.id}" muted playsinline autoplay></video>
       <input class="lbl" data-change="src-label" data-id="${s.id}" value="${esc(s.label)}"><button class="btn sm x" data-act="src-del" data-id="${s.id}">✕</button></div>`).join("")}</div>`
-      : `<div class="empty">Nenhuma fonte. Use “Detectar câmeras” (webcams USB, câmeras IP com driver, celular como webcam) ou “Capturar tela” para gravar o monitor do paciente.</div>`}
+      : `<div class="empty">Nenhuma fonte. Use “Detectar câmeras” (webcams USB, celular como webcam), “Câmera da sala por link” (câmera IP fixa: WebRTC, HLS ou MJPEG) ou “Capturar tela” para gravar o monitor do paciente.</div>`}
   </section>
   <div class="row end"><button class="btn rec" data-act="rec-start" style="font-size:16px;padding:10px 20px">● Iniciar gravação</button></div>`;
 }
@@ -953,6 +956,132 @@ function testStream(label) {
   return stream;
 }
 function stopStream(s) { if (!s) return; s.getTracks().forEach((t) => t.stop()); if (s._stop) s._stop(); }
+
+// ── Câmera fixa da sala por link (câmera IP) ─────────────────────────────
+// WebRTC/WHEP entra direto como MediaStream; HLS, vídeo, MJPEG e snapshot são desenhados
+// num canvas (captureStream), o que exige que a câmera libere CORS. RTSP precisa de conversor.
+const CORS_MSG = "a câmera responde, mas não libera acesso entre origens (CORS). Ative CORS na câmera ou use um conversor (MediaMTX/go2rtc) com WebRTC ou HLS";
+const HLS_CDN = "https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.17/hls.min.js";
+function loadScript(src) {
+  return new Promise((ok, fail) => { const el = document.createElement("script"); el.src = src; el.onload = ok; el.onerror = () => fail(new Error("não foi possível carregar " + src)); document.head.appendChild(el); });
+}
+function camHolder() {
+  let h = $("#cam-holder");
+  if (!h) { h = document.createElement("div"); h.id = "cam-holder"; h.setAttribute("aria-hidden", "true"); h.style.cssText = "position:fixed;left:-10px;top:0;width:2px;height:2px;overflow:hidden;opacity:0;pointer-events:none"; document.body.appendChild(h); }
+  return h;
+}
+async function whepStream(url) {
+  const pc = new RTCPeerConnection();
+  pc.addTransceiver("video", { direction: "recvonly" }); pc.addTransceiver("audio", { direction: "recvonly" });
+  const stream = new MediaStream();
+  pc.ontrack = (e) => { if (!stream.getTracks().includes(e.track)) stream.addTrack(e.track); };
+  await pc.setLocalDescription(await pc.createOffer());
+  await new Promise((ok) => { if (pc.iceGatheringState === "complete") return ok(); const t = setTimeout(ok, 2000); pc.onicegatheringstatechange = () => { if (pc.iceGatheringState === "complete") { clearTimeout(t); ok(); } }; });
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/sdp" }, body: pc.localDescription.sdp });
+  if (!r.ok) { pc.close(); throw new Error(`servidor WHEP respondeu ${r.status}`); }
+  await pc.setRemoteDescription({ type: "answer", sdp: await r.text() });
+  await new Promise((ok, fail) => { const t0 = Date.now(); const iv = setInterval(() => { if (stream.getVideoTracks().length) { clearInterval(iv); ok(); } else if (Date.now() - t0 > 10000) { clearInterval(iv); fail(new Error("sem vídeo em 10 s")); } }, 100); })
+    .catch((e) => { pc.close(); throw e; });
+  stream._stop = () => pc.close();
+  return stream;
+}
+async function urlStream(cam) {
+  const kind = cam.kind && cam.kind !== "auto" ? cam.kind : C.detectStreamKind(cam.url);
+  if (kind === "webrtc") return whepStream(cam.url);
+  const holder = camHolder(), cv = document.createElement("canvas"), g = cv.getContext("2d");
+  let el, hls = null, poll = null;
+  if (kind === "mjpeg" || kind === "imagem") {
+    el = document.createElement("img"); el.crossOrigin = "anonymous"; el.decoding = "async";
+    const bust = () => cam.url + (cam.url.includes("?") ? "&" : "?") + "_t=" + Date.now();
+    el.src = kind === "imagem" ? bust() : cam.url;
+    if (kind === "imagem") poll = setInterval(() => { const n = new Image(); n.crossOrigin = "anonymous"; n.onload = () => { el.src = n.src; }; n.src = bust(); }, 500);
+  } else {
+    el = document.createElement("video"); el.crossOrigin = "anonymous"; el.muted = true; el.playsInline = true; el.autoplay = true;
+    if (kind === "hls" && !el.canPlayType("application/vnd.apple.mpegurl")) {
+      if (!window.Hls) await loadScript(HLS_CDN);
+      if (!window.Hls || !window.Hls.isSupported()) throw new Error("HLS não suportado neste navegador");
+      hls = new window.Hls({ liveDurationInfinity: true, lowLatencyMode: true }); hls.loadSource(cam.url); hls.attachMedia(el);
+    } else el.src = cam.url;
+    el.play().catch(() => {});
+  }
+  holder.appendChild(el);
+  const ready = () => (el.tagName === "IMG" ? el.complete && el.naturalWidth > 0 : el.readyState >= 2 && el.videoWidth > 0);
+  const cleanup = () => { clearInterval(poll); if (hls) hls.destroy(); if (el.tagName === "VIDEO") { el.pause(); el.removeAttribute("src"); el.load(); } else el.src = ""; el.remove(); };
+  try {
+    await new Promise((ok, fail) => {
+      const t0 = Date.now();
+      el.addEventListener("error", () => {
+        if (el.tagName !== "IMG") return fail(new Error("a câmera não respondeu, o formato não é suportado ou ela não libera CORS"));
+        // distingue câmera fora do ar de câmera sem CORS: tenta abrir sem pedir acesso entre origens
+        const probe = new Image(), t = setTimeout(() => { probe.src = ""; fail(new Error("a câmera não respondeu ou o formato não é suportado")); }, 5000);
+        probe.onload = () => { clearTimeout(t); probe.src = ""; fail(new Error(CORS_MSG)); };
+        probe.onerror = () => { clearTimeout(t); fail(new Error("a câmera não respondeu ou o formato não é suportado")); };
+        probe.src = cam.url;
+      }, { once: true });
+      if (hls) hls.on(window.Hls.Events.ERROR, (_, d) => { if (d.fatal) fail(new Error("erro HLS: " + d.details)); });
+      const iv = setInterval(() => { if (ready()) { clearInterval(iv); ok(); } else if (Date.now() - t0 > 12000) { clearInterval(iv); fail(new Error("sem imagem em 12 s")); } }, 100);
+    });
+    const w = el.videoWidth || el.naturalWidth, h = el.videoHeight || el.naturalHeight, sc = Math.min(1, 1280 / w);
+    cv.width = Math.round(w * sc) || 640; cv.height = Math.round(h * sc) || 360;
+    g.drawImage(el, 0, 0, cv.width, cv.height);
+    try { g.getImageData(0, 0, 1, 1); }
+    catch (e) { throw new Error(CORS_MSG); }
+  } catch (e) { cleanup(); throw e; }
+  const draw = setInterval(() => { if (ready()) g.drawImage(el, 0, 0, cv.width, cv.height); }, 1000 / 15);
+  const stream = cv.captureStream(15);
+  stream._stop = () => { clearInterval(draw); cleanup(); };
+  return stream;
+}
+async function addUrlCam(cam) {
+  const chk = C.checkCamUrl(cam.url, cam.kind, { protocol: location.protocol });
+  if (!chk.ok) return toast(chk.problems[0], 9000);
+  if (LIVE.sources.length >= 4) return toast("Máximo de 4 fontes de vídeo por sessão.");
+  if (LIVE.sources.some((s) => s.url === cam.url)) return toast("Essa câmera já está na sessão.");
+  toast(`Conectando a ${cam.label}…`, 12000);
+  try {
+    const stream = await urlStream(cam);
+    addSource({ label: cam.label, kind: "camera-ip", url: cam.url, camId: cam.id, stream });
+    toast(`${cam.label} conectada.`);
+  } catch (e) { toast(`Não foi possível abrir ${cam.label}: ${e.message}.`, 10000); }
+}
+const camKindOpts = (sel) => opt("auto", "Detectar pelo link", sel || "auto") + Object.entries(C.CAM_KINDS).map(([k, v]) => opt(k, v, sel)).join("");
+const CAM_HELP = `<p class="muted small">Formatos aceitos pelo navegador: <b>WebRTC (WHEP)</b>, <b>HLS (.m3u8)</b>, <b>MJPEG</b>, imagem atualizada (snapshot) e arquivo MP4/WebM.
+  Câmeras que só oferecem <b>RTSP</b> precisam de um conversor na rede da sala, como MediaMTX ou go2rtc, que publica o mesmo vídeo em WebRTC ou HLS
+  (ex.: <span class="mono">http://servidor:8889/sala1/whep</span> ou <span class="mono">http://servidor:8888/sala1/index.m3u8</span>).
+  Para HLS, MJPEG e snapshot a câmera ou o conversor precisa liberar CORS.</p>`;
+function camForm(c = {}) {
+  return `<label class="f"><span>Nome da câmera</span><input name="label" required value="${esc(c.label || "")}" placeholder="ex.: Câmera do teto – visão do leito"></label>
+    <label class="f"><span>Link da transmissão</span><input name="url" required value="${esc(c.url || "")}" placeholder="http://192.168.0.30:8889/sala1/whep" inputmode="url" autocomplete="off"></label>
+    <label class="f"><span>Tipo</span><select name="kind">${camKindOpts(c.kind)}</select></label>${CAM_HELP}`;
+}
+function openCamLink() {
+  const loc = byId("locations", LIVE.setup.locationId);
+  modal("Câmera da sala por link", camForm() + (loc ? `<label class="row small"><input type="checkbox" name="keep" checked> Salvar esta câmera na ${esc(loc.name)} para as próximas sessões</label>` : ""), {
+    submit: "Conectar",
+    onSubmit: (fd) => {
+      const cam = { id: C.uid("cam"), label: fd.get("label").trim() || "Câmera da sala", url: fd.get("url").trim(), kind: fd.get("kind") };
+      const chk = C.checkCamUrl(cam.url, cam.kind, { protocol: location.protocol });
+      if (!chk.ok) { toast(chk.problems[0], 9000); return false; }
+      if (loc && fd.get("keep")) { (loc.cameras = loc.cameras || []).push(cam); save(); }
+      addUrlCam(cam);
+    },
+  });
+}
+function openRoomCams(locId) {
+  const l = byId("locations", locId); if (!l) return;
+  const list = (l.cameras || []).map((c) => `<li class="between" style="margin:0"><span><b>${esc(c.label)}</b> <span class="tag info">${esc(C.CAM_KINDS[c.kind] || C.CAM_KINDS[C.detectStreamKind(c.url)] || "link")}</span><br><span class="mono small muted" style="word-break:break-all">${esc(c.url)}</span></span>
+    <button type="button" class="btn sm" data-act="cam-del" data-loc="${l.id}" data-id="${c.id}">✕</button></li>`).join("") || `<li class="muted">Nenhuma câmera cadastrada.</li>`;
+  modal(`Câmeras fixas · ${l.name}`, `<ul class="plain" style="margin-bottom:12px">${list}</ul><h3>Adicionar câmera</h3>${camForm()}`, {
+    submit: "Adicionar",
+    onSubmit: (fd) => {
+      const cam = { id: C.uid("cam"), label: fd.get("label").trim() || "Câmera da sala", url: fd.get("url").trim(), kind: fd.get("kind") };
+      const chk = C.checkCamUrl(cam.url, cam.kind, { protocol: location.protocol });
+      if (chk.kind === "rtsp" || chk.kind === "invalido") { toast(chk.problems[0], 9000); return false; }
+      if (!chk.ok) toast("Câmera salva, mas: " + chk.problems[0], 9000);
+      (l.cameras = l.cameras || []).push(cam); save(); render(); openRoomCams(l.id); return false;
+    },
+  });
+}
 
 async function recStart() {
   const s = LIVE.setup;
@@ -1394,7 +1523,7 @@ R.config = () => `<h1>Configurações</h1>
     <div class="row"><button class="btn" data-act="backup">Exportar backup</button><label class="btn">Restaurar backup<input type="file" accept=".json,application/json" data-change="restore" hidden></label></div>
     <h2 style="margin-top:14px">Dados</h2><div class="row"><button class="btn" data-act="demo">Carregar exemplo</button><button class="btn danger" data-act="wipe">Apagar tudo</button></div></section></div>
   <section class="card"><div class="between"><h2 style="margin:0">Salas e recursos</h2><div class="row"><button class="btn" data-act="loc-new">+ Sala</button><button class="btn" data-act="resrc-new">+ Recurso</button></div></div>
-    <div class="cols"><ul class="plain">${DB.locations.map((l) => `<li class="between" style="margin:0">${esc(l.name)}<button class="btn sm" data-act="loc-del" data-id="${l.id}">✕</button></li>`).join("") || `<li class="muted">Sem salas</li>`}</ul>
+    <div class="cols"><ul class="plain">${DB.locations.map((l) => `<li class="between" style="margin:0"><span>${esc(l.name)}${(l.cameras || []).length ? ` <span class="tag info">${l.cameras.length} câmera(s)</span>` : ""}</span><span class="row"><button class="btn sm" data-act="loc-cams" data-id="${l.id}">Câmeras</button><button class="btn sm" data-act="loc-del" data-id="${l.id}">✕</button></span></li>`).join("") || `<li class="muted">Sem salas</li>`}</ul>
     <ul class="plain">${DB.resources.map((r) => `<li class="between" style="margin:0">${esc(r.name)} <span class="tag">${r.kind === "capital" ? "permanente" : "insumo"}</span><button class="btn sm" data-act="resrc-del" data-id="${r.id}">✕</button></li>`).join("") || `<li class="muted">Sem recursos</li>`}</ul></div></section>`;
 AFTER.config = async () => {
   const el = $("#st-est"); if (!el) return;
@@ -1548,6 +1677,10 @@ const ACT = {
   "src-detect": () => detectCams(),
   "src-cam": (b) => addCam(b.dataset.id, b.dataset.label),
   "src-screen": () => addScreen(),
+  "src-link": () => openCamLink(),
+  "src-roomcam": (b) => { const c = ((byId("locations", LIVE.setup.locationId) || {}).cameras || []).find((x) => x.id === b.dataset.id); if (c) addUrlCam(c); },
+  "loc-cams": (b) => openRoomCams(b.dataset.id),
+  "cam-del": (b) => { const l = byId("locations", b.dataset.loc); if (!l) return; l.cameras = (l.cameras || []).filter((c) => c.id !== b.dataset.id); save(); render(); openRoomCams(l.id); },
   "src-test": () => addSource({ label: "Fonte de teste " + (LIVE.sources.length + 1), kind: "teste", stream: testStream("CÂMERA " + (LIVE.sources.length + 1)) }),
   "src-del": (b) => { const s = LIVE.sources.find((x) => x.id === b.dataset.id); if (s) stopStream(s.stream); LIVE.sources = LIVE.sources.filter((x) => x !== s); render(); },
   "sim-connect": () => simConnect(($("#lv-room") || {}).value || ""),
@@ -1627,7 +1760,8 @@ const CHG = {
   "role": (el) => { UI.role = el.value; UI.me = ""; if (UI.view === "sessao") teardownPB(); savePrefs(); render(); },
   "me": (el) => { UI.me = el.value; savePrefs(); if (UI.view === "sessao") teardownPB(); render(); },
   "ag-loc": (el) => { UI.agLoc = el.value; savePrefs(); render(); },
-  "lv": (el) => { LIVE.setup[el.name] = el.value; if (el.name === "courseId") { const c = byId("courses", el.value); LIVE.setup.pids = c ? [...(c.participantIds || [])] : []; render(); } },
+  "lv": (el) => { LIVE.setup[el.name] = el.value; if (el.name === "courseId") { const c = byId("courses", el.value); LIVE.setup.pids = c ? [...(c.participantIds || [])] : []; render(); }
+    if (el.name === "locationId") render(); },
   "lv-pid": (el) => { const p = LIVE.setup.pids; if (el.checked) { if (!p.includes(el.value)) p.push(el.value); } else LIVE.setup.pids = p.filter((x) => x !== el.value); },
   "lv-consent": (el) => { LIVE.setup.consent = el.checked; },
   "lv-mic": (el) => { LIVE.micId = el.value; },

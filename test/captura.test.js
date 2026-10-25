@@ -114,3 +114,21 @@ test("retenção: prazo do cenário prevalece sobre o global", () => {
   assert.deepEqual(C.expiredMedia(sessions, scenarios, 60, now).map((s) => s.id), ["1"]);
   assert.deepEqual(C.expiredMedia(sessions, scenarios, 10, now).map((s) => s.id), ["1", "2"]);
 });
+
+test("câmera da sala por link: tipo pela URL e bloqueios do navegador", () => {
+  const k = (u) => C.detectStreamKind(u);
+  assert.equal(k("rtsp://admin:x@192.168.0.20:554/stream1"), "rtsp");
+  assert.equal(k("http://10.0.0.5:8889/sala1/whep"), "webrtc");
+  assert.equal(k("https://cam.exemplo.br/hls/sala1/index.m3u8?token=1"), "hls");
+  assert.equal(k("http://192.168.0.30/video.mjpg"), "mjpeg");
+  assert.equal(k("http://192.168.0.30/cgi-bin/mjpg/video.cgi?channel=1"), "mjpeg");
+  assert.equal(k("http://192.168.0.30/snapshot.jpg"), "imagem");
+  assert.equal(k("https://x.br/gravacao.mp4"), "video");
+  assert.equal(k("https://x.br/camera"), "desconhecido");
+  assert.equal(k("sala1"), "invalido");
+  assert.equal(C.checkCamUrl("rtsp://cam/1", "auto", { protocol: "http:" }).ok, false);
+  assert.equal(C.checkCamUrl("http://192.168.0.30/video.mjpg", "auto", { protocol: "https:" }).ok, false, "conteúdo misto");
+  assert.equal(C.checkCamUrl("http://localhost:8889/sala/whep", "auto", { protocol: "https:" }).ok, true);
+  assert.equal(C.checkCamUrl("http://192.168.0.30/video.mjpg", "auto", { protocol: "http:" }).ok, true);
+  assert.equal(C.checkCamUrl("https://x.br/camera", "hls", {}).kind, "hls", "tipo escolhido prevalece");
+});

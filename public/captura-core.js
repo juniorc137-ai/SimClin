@@ -247,9 +247,39 @@
     return out;
   }
 
+  /**
+   * Câmera fixa da sala por link: identifica o tipo de transmissão pela URL e aponta
+   * o que impede o navegador de abri-la. Navegadores não tocam RTSP/RTMP; essas câmeras
+   * precisam de um conversor (MediaMTX, go2rtc) que entregue WebRTC (WHEP), HLS ou MJPEG.
+   */
+  const CAM_KINDS = { webrtc: "WebRTC (WHEP)", hls: "HLS (.m3u8)", mjpeg: "MJPEG", imagem: "Imagem atualizada (snapshot)", video: "Arquivo de vídeo (MP4/WebM)" };
+  function detectStreamKind(url) {
+    const u = String(url || "").trim().toLowerCase();
+    if (/^(rtsp|rtsps|rtmp|rtmps|rtp|srt|udp):/.test(u)) return "rtsp";
+    if (!/^https?:\/\//.test(u)) return "invalido";
+    const path = u.split(/[?#]/)[0];
+    if (/\/whep\/?$/.test(path) || /[?&](whep|webrtc)\b/.test(u)) return "webrtc";
+    if (/\.m3u8$/.test(path)) return "hls";
+    if (/\.(mjpe?g)$/.test(path) || /(mjpg|mjpeg|videostream\.cgi|video\.cgi|action=stream|\/stream\.(cgi|jpg)$)/.test(u)) return "mjpeg";
+    if (/\.(jpe?g|png|webp)$/.test(path) || /(snapshot|snap\.cgi|action=snapshot|image\.cgi|\/jpg\/image)/.test(u)) return "imagem";
+    if (/\.(mp4|webm|ogv|ogg|mov)$/.test(path)) return "video";
+    return "desconhecido";
+  }
+  function checkCamUrl(url, kind, page = {}) {
+    const u = String(url || "").trim(), k = kind && kind !== "auto" ? kind : detectStreamKind(u), problems = [];
+    if (k === "invalido") problems.push("Informe um endereço completo começando com http:// ou https://.");
+    if (k === "rtsp") problems.push("Navegadores não abrem RTSP/RTMP. Converta a câmera com um servidor como MediaMTX ou go2rtc e use o link WebRTC (WHEP), HLS (.m3u8) ou MJPEG que ele fornece.");
+    let host = "";
+    try { host = new URL(u).hostname; } catch (e) { /* inválido */ }
+    const local = /^(localhost|127\.|\[?::1\]?$)/.test(host);
+    if (page.protocol === "https:" && /^http:/i.test(u) && !local) problems.push("Esta página está em https e o link da câmera em http: o navegador bloqueia conteúdo misto. Use um link https ou abra o HelseCapture pelo servidor local (http).");
+    if (/^[a-z]+:\/\/[^/]*:[^/]*@/i.test(u)) problems.push("Usuário e senha no link podem ser bloqueados pelo navegador; prefira um link com token ou liberado na rede da sala.");
+    return { kind: k, ok: !problems.length || (problems.length === 1 && /senha/.test(problems[0])), problems };
+  }
+
   return {
     uid, fmtClock, expandRecurrence, findConflicts, overlaps, itemMax, scoreEvaluation,
     sampleAt, pushSample, usageReport, learnerReport, annotationReport, toCSV, parseRosterCSV,
-    toICS, expiredMedia, monthKey,
+    toICS, expiredMedia, monthKey, CAM_KINDS, detectStreamKind, checkCamUrl,
   };
 });

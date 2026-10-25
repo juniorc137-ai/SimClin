@@ -99,3 +99,12 @@ multiusuário institucional seria preciso um back-end com autenticação, armaze
 vídeo e LTI 1.3. A gravação de pessoas exige consentimento e prazo de retenção (LGPD,
 Lei 13.709/2018), ambos presentes na interface.
 
+
+### Câmera fixa da sala por link
+
+Em **Configurações › Salas › Câmeras** (ou em **Sessão ao vivo › + Câmera da sala por link**) cada sala
+guarda o link das suas câmeras IP, que aparecem como fontes prontas ao iniciar uma sessão naquela sala.
+O navegador aceita **WebRTC (WHEP)**, **HLS (.m3u8)**, **MJPEG**, imagem atualizada (snapshot) e MP4/WebM.
+Câmeras só **RTSP** precisam de um conversor na rede da sala (MediaMTX ou go2rtc), que publica o mesmo
+vídeo em WebRTC/HLS. HLS, MJPEG e snapshot passam por um canvas e exigem CORS liberado; uma página em
+https não abre câmeras em http (conteúdo misto), então use o servidor local nesse caso.
