@@ -132,3 +132,25 @@ test("câmera da sala por link: tipo pela URL e bloqueios do navegador", () => {
   assert.equal(C.checkCamUrl("http://192.168.0.30/video.mjpg", "auto", { protocol: "http:" }).ok, true);
   assert.equal(C.checkCamUrl("https://x.br/camera", "hls", {}).kind, "hls", "tipo escolhido prevalece");
 });
+
+test("biblioteca baseada em evidências: referências e vínculos consistentes", () => {
+  const L = require("../public/captura-biblioteca.js");
+  const evKeys = new Set(L.evaluations.map((e) => e.key)), scKeys = new Set(L.scenarios.map((s) => s.key));
+  assert.equal(evKeys.size, L.evaluations.length, "chaves de avaliação únicas");
+  for (const e of L.evaluations) {
+    for (const r of e.refs) assert.ok(L.refs[r], `referência ${r} de ${e.key}`);
+    assert.ok(["antes", "depois", "reflexao", "avaliador", "monitor"].includes(e.type), e.key);
+    for (const it of e.items) assert.ok(["check", "escala", "multipla", "texto"].includes(it.kind), `${e.key}: ${it.text}`);
+    const full = Object.fromEntries(e.items.map((it, i) => [i, it.kind === "check" ? true : it.kind === "escala" ? it.max : it.kind === "multipla" ? 0 : "ok"]));
+    assert.ok(C.scoreEvaluation({ items: e.items.map((it, i) => ({ ...it, id: i })) }, full).points >= 0);
+  }
+  for (const s of L.scenarios) {
+    for (const k of s.evals) assert.ok(evKeys.has(k), `avaliação ${k} de ${s.key}`);
+    for (const r of s.refs) assert.ok(L.refs[r], `referência ${r} de ${s.key}`);
+  }
+  for (const c of L.courses) for (const k of c.scenarios) assert.ok(scKeys.has(k), `cenário ${k} de ${c.code}`);
+  const cited = new Set([...L.evaluations.flatMap((e) => e.refs), ...L.scenarios.flatMap((s) => s.refs)]);
+  const articles = Object.values(L.refs).filter((r) => /ecns\.2025/.test(r));
+  assert.equal(articles.length, 24, "os 24 artigos da pasta");
+  for (const [k, r] of Object.entries(L.refs)) { assert.ok(cited.has(k), `referência ${k} usada`); assert.match(r, /\((20(1[89]|2[0-5]))\)/, `${k} entre 2018 e 2025`); assert.match(r, /https:\/\/doi\.org\//); }
+});

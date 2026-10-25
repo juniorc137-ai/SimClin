@@ -100,6 +100,15 @@ vídeo e LTI 1.3. A gravação de pessoas exige consentimento e prazo de retenç
 Lei 13.709/2018), ambos presentes na interface.
 
 
+### Biblioteca de exemplo baseada em evidências
+
+O botão **Carregar biblioteca** (Painel › Comece por aqui) cria 5 cursos, 13 cenários e 24 avaliações e
+checklists (`public/captura-biblioteca.js`) construídos a partir de 24 artigos de *Clinical Simulation in
+Nursing*, v. 105 (2025), incluindo a revisão 2025 dos padrões INACSL (prebriefing, facilitação, debriefing e
+integridade profissional), e das diretrizes clínicas que eles usam (AHA 2020, ACOG 2020, ESC 2023). Cada
+cenário e avaliação guarda suas referências completas com DOI; a lista consolidada aparece em **Cenários**.
+Os itens são redação própria alinhada às fontes; instrumentos protegidos não são reproduzidos.
+
 ### Câmera fixa da sala por link
 
 Em **Configurações › Salas › Câmeras** (ou em **Sessão ao vivo › + Câmera da sala por link**) cada sala

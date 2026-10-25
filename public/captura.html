@@ -318,6 +318,7 @@ ul.plain li:last-child{border-bottom:0}
 
 <script src="captura-core.js"></script>
 <script src="scenarios.js"></script>
+<script src="captura-biblioteca.js"></script>
 <script>
 "use strict";
 /* ════════════════════════════════════════════════════════════════════════
@@ -552,7 +553,7 @@ R.painel = () => {
   const recent = [...ses].sort((a, b) => b.startedAt - a.startedAt).slice(0, 6);
   const pend = UI.role === "admin" ? DB.reservations.filter((r) => r.status === "pendente").length : 0;
   return `<h1>Painel${DB.settings.institution ? " · " + esc(DB.settings.institution) : ""}</h1>
-  ${!DB.sessions.length && UI.role === "admin" ? `<div class="card"><div class="between"><div><b>Comece por aqui.</b> <span class="muted">Carregue um conjunto de exemplo (curso, estudantes, cenários, avaliações, reservas e uma sessão gravada) para explorar todas as telas.</span></div><button class="btn primary" data-act="demo">Carregar exemplo</button></div></div>` : ""}
+  ${!DB.sessions.length && UI.role === "admin" ? `<div class="card"><div class="between"><div><b>Comece por aqui.</b> <span class="muted">Carregue a biblioteca baseada em evidências: 5 cursos, 13 cenários e 24 avaliações e checklists construídos a partir de 24 artigos de <i>Clinical Simulation in Nursing</i> (2025), incluindo os padrões INACSL 2025, com agenda, estudantes e uma sessão de pré-eclâmpsia gravada.</span></div><button class="btn primary" data-act="demo">Carregar biblioteca</button></div></div>` : ""}
   ${pend ? `<div class="card"><span class="tag warn">${pend} reserva(s) aguardando aprovação</span> <button class="btn sm" data-act="go" data-v="agenda">Ver agenda</button></div>` : ""}
   <div class="kpis">${kpi("Sessões gravadas", u.sessions)}${kpi("Horas de simulação", fmtH(u.hours))}${kpi("Horas-participante", fmtH(u.personHours))}${kpi("Avaliações registradas", nRes)}</div>
   <div class="cols">
@@ -706,8 +707,11 @@ R.cenarios = () => `<div class="between"><h1 style="margin:0">Cenários</h1><div
   ${DB.scenarios.length ? `<div class="cols">${DB.scenarios.map((s) => `<section class="card click" style="cursor:pointer" data-act="sc-open" data-id="${s.id}">
     <h2>${esc(s.title)}</h2><p class="muted small">${esc(s.simulator || "Sem simulador")} · ${(s.annotations || []).length} anotações pré-definidas · ${(s.evaluationIds || []).length} avaliação(ões)${+s.retentionDays ? ` · retenção ${s.retentionDays} dias` : ""}</p>
     <p class="small">${esc(s.summary || "")}</p>
+    ${(s.refs || []).length ? `<p class="small muted" style="margin-top:6px"><b>Base:</b> ${s.refs.map((r) => esc(shortRef(r))).join("; ")}</p>` : ""}
     <div class="row" style="margin-top:6px">${(s.annotations || []).slice(0, 8).map((a) => `<span class="tag" style="border-color:${esc(a.color)}">${esc(a.label)}</span>`).join("")}</div></section>`).join("")}</div>`
-  : `<div class="empty">Nenhum cenário. Crie um ou importe os cenários programados do SimClin.</div>`}`;
+  : `<div class="empty">Nenhum cenário. Crie um ou importe os cenários programados do SimClin.</div>`}
+  ${allRefs().length ? `<section class="card"><h2>Referências da biblioteca (${allRefs().length})</h2><ol class="small" style="padding-left:20px;display:grid;gap:6px">${allRefs().map((r) => `<li>${refHtml(r)}</li>`).join("")}</ol></section>` : ""}`;
+const allRefs = () => [...new Set([...DB.scenarios.flatMap((s) => s.refs || []), ...DB.evaluations.flatMap((e) => e.refs || [])])].sort((a, b) => a.localeCompare(b, "pt-BR"));
 
 function openScenario(s) {
   const isNew = !DB.scenarios.includes(s);
@@ -718,19 +722,20 @@ function openScenario(s) {
     <label class="f"><span>Resumo do caso</span><textarea name="summary">${esc(s.summary || "")}</textarea></label>
     <label class="f"><span>Objetivos de aprendizagem (um por linha)</span><textarea name="objectives">${esc((s.objectives || []).join("\n"))}</textarea></label>
     <label class="f"><span>Anotações pré-definidas — uma por linha: <code>Rótulo | Categoria | #cor</code>. As nove primeiras ganham atalhos 1–9 na gravação.</span><textarea name="ann" style="min-height:140px;font-family:var(--mono);font-size:12px">${esc(annTxt)}</textarea></label>
+    <label class="f"><span>Referências (uma por linha)</span><textarea name="refs" style="min-height:60px;font-size:12px">${esc((s.refs || []).join("\n"))}</textarea></label>
     <div class="f"><span>Avaliações vinculadas</span><div class="checks">${DB.evaluations.map((e) => `<label><input type="checkbox" name="evaluationIds" value="${e.id}" ${(s.evaluationIds || []).includes(e.id) ? "checked" : ""}> ${esc(e.title)} <span class="muted small">(${esc(e.type)})</span></label>`).join("") || `<span class="muted">Nenhuma avaliação criada</span>`}</div></div>`, {
     extra: isNew ? "" : `<button type="button" class="btn" data-act="sc-copy" data-id="${s.id}">Duplicar</button><button type="button" class="btn" data-act="sc-del" data-id="${s.id}">Excluir</button>`,
     onSubmit: (fd) => {
       const annotations = fd.get("ann").split("\n").map((l) => l.split("|").map((x) => x.trim())).filter((p) => p[0])
         .map(([label, cat, color]) => ({ id: C.uid("a"), label, cat: cat || "Geral", color: /^#[0-9a-f]{3,8}$/i.test(color || "") ? color : colorFor(cat || label) }));
       Object.assign(s, { title: fd.get("title").trim() || "Cenário", simulator: fd.get("simulator").trim(), retentionDays: +fd.get("retentionDays") || 0,
-        summary: fd.get("summary").trim(), objectives: fd.get("objectives").split("\n").map((x) => x.trim()).filter(Boolean), annotations, evaluationIds: fd.getAll("evaluationIds") });
+        summary: fd.get("summary").trim(), objectives: fd.get("objectives").split("\n").map((x) => x.trim()).filter(Boolean), annotations, evaluationIds: fd.getAll("evaluationIds"), refs: fd.get("refs").split("\n").map((x) => x.trim()).filter(Boolean) });
       if (isNew) DB.scenarios.push(s); save(); render();
     } });
 }
 const CRM_MARKERS = [["Comunicação em alça fechada", "Trabalho em equipe"], ["Liderança clara", "Trabalho em equipe"], ["Pedido de ajuda", "Trabalho em equipe"],
   ["Erro / omissão", "Segurança do paciente"], ["Boa prática", "Destaque"], ["Ponto para o debriefing", "Debriefing"]];
-function importEngineScenarios() {
+function importEngineScenarios(quiet) {
   let n = 0;
   for (const p of window.SCENARIO_PROGRAMS || []) {
     if (DB.scenarios.some((s) => s.engineId === p.id)) continue;
@@ -740,6 +745,7 @@ function importEngineScenarios() {
       objectives: p.objectives || [], annotations: anns, evaluationIds: [], retentionDays: 0 });
     n++;
   }
+  if (quiet) return n;
   save(); render(); toast(n ? `${n} cenário(s) importado(s).` : "Os cenários do motor já estavam importados.");
 }
 
@@ -747,7 +753,7 @@ function importEngineScenarios() {
 R.avaliacoes = () => `<div class="between"><h1 style="margin:0">Avaliações</h1><button class="btn primary" data-act="ev-new">+ Avaliação</button></div>
   ${DB.evaluations.length ? `<div class="tbl card"><table><tr><th>Título</th><th>Tipo</th><th>Itens</th><th>Pontos</th><th>Críticos</th><th>Respostas</th><th></th></tr>
   ${DB.evaluations.map((e) => { const sc = C.scoreEvaluation(e, {}); const n = DB.sessions.reduce((a, s) => a + (s.results || []).filter((r) => r.evaluationId === e.id).length, 0);
-    return `<tr class="click" data-act="ev-open" data-id="${e.id}"><td>${esc(e.title)}</td><td>${esc(EVAL_TYPES[e.type] || e.type)}</td><td>${e.items.length}</td><td>${sc.max}</td><td>${e.items.filter((i) => i.critical).length}</td><td>${n}</td>
+    return `<tr class="click" data-act="ev-open" data-id="${e.id}"><td>${esc(e.title)}${(e.refs || []).length ? `<span class="small muted" style="display:block">${e.refs.map((r) => esc(shortRef(r))).join("; ")}</span>` : ""}</td><td>${esc(EVAL_TYPES[e.type] || e.type)}</td><td>${e.items.length}</td><td>${sc.max}</td><td>${e.items.filter((i) => i.critical).length}</td><td>${n}</td>
     <td><button class="btn sm" data-act="ev-print" data-id="${e.id}">Imprimir</button></td></tr>`; }).join("")}</table></div>`
   : `<div class="empty">Nenhuma avaliação. Crie checklists de desempenho, escalas comportamentais, questionários pré/pós e formulários de reflexão.</div>`}
   <p class="muted small">Tipos: questionários <b>antes</b> e <b>após</b> a sessão e <b>reflexão</b> são respondidos pelo estudante; <b>avaliador</b> (individual) e <b>monitoramento</b> (equipe) são preenchidos pelo docente durante ou após a gravação. Itens críticos não cumpridos sinalizam o resultado.</p>`;
@@ -764,6 +770,7 @@ function openEvaluation(e) {
   modal(isNew ? "Nova avaliação" : "Editar avaliação", `<label class="f"><span>Título</span><input name="title" required value="${esc(e.title || "")}"></label>
     <label class="f"><span>Tipo</span><select name="type">${Object.entries(EVAL_TYPES).map(([k, v]) => opt(k, v, e.type || "avaliador")).join("")}</select></label>
     <label class="f"><span>Instruções</span><textarea name="instructions" style="min-height:44px">${esc(e.instructions || "")}</textarea></label>
+    <label class="f"><span>Referências (uma por linha)</span><textarea name="refs" style="min-height:44px;font-size:12px">${esc((e.refs || []).join("\n"))}</textarea></label>
     <h3>Itens</h3><div id="items">${(e.items || []).map(itemRow).join("")}</div>
     <button type="button" class="btn" data-act="item-add">+ Item</button>`, {
     extra: isNew ? "" : `<button type="button" class="btn" data-act="ev-del" data-id="${e.id}">Excluir</button>`,
@@ -777,7 +784,7 @@ function openEvaluation(e) {
         return it;
       }).filter((it) => it.text);
       if (!items.length) { toast("Inclua ao menos um item."); return false; }
-      Object.assign(e, { title: fd.get("title").trim() || "Avaliação", type: fd.get("type"), instructions: fd.get("instructions").trim(), items });
+      Object.assign(e, { title: fd.get("title").trim() || "Avaliação", type: fd.get("type"), instructions: fd.get("instructions").trim(), refs: fd.get("refs").split("\n").map((x) => x.trim()).filter(Boolean), items });
       if (isNew) DB.evaluations.push(e); save(); render();
     } });
   if (!(e.items || []).length) $("#items").insertAdjacentHTML("beforeend", itemRow({}));
@@ -1521,7 +1528,7 @@ R.config = () => `<h1>Configurações</h1>
     <div class="row"><button class="btn" data-act="persist">Pedir armazenamento persistente</button></div>
     <h2 style="margin-top:14px">Cópia de segurança</h2><p class="muted small">O arquivo JSON contém cadastros, agenda, sessões, anotações e avaliações (sem os vídeos; baixe-os em cada sessão).</p>
     <div class="row"><button class="btn" data-act="backup">Exportar backup</button><label class="btn">Restaurar backup<input type="file" accept=".json,application/json" data-change="restore" hidden></label></div>
-    <h2 style="margin-top:14px">Dados</h2><div class="row"><button class="btn" data-act="demo">Carregar exemplo</button><button class="btn danger" data-act="wipe">Apagar tudo</button></div></section></div>
+    <h2 style="margin-top:14px">Dados</h2><div class="row"><button class="btn" data-act="demo">Carregar biblioteca de exemplo</button><button class="btn danger" data-act="wipe">Apagar tudo</button></div></section></div>
   <section class="card"><div class="between"><h2 style="margin:0">Salas e recursos</h2><div class="row"><button class="btn" data-act="loc-new">+ Sala</button><button class="btn" data-act="resrc-new">+ Recurso</button></div></div>
     <div class="cols"><ul class="plain">${DB.locations.map((l) => `<li class="between" style="margin:0"><span>${esc(l.name)}${(l.cameras || []).length ? ` <span class="tag info">${l.cameras.length} câmera(s)</span>` : ""}</span><span class="row"><button class="btn sm" data-act="loc-cams" data-id="${l.id}">Câmeras</button><button class="btn sm" data-act="loc-del" data-id="${l.id}">✕</button></span></li>`).join("") || `<li class="muted">Sem salas</li>`}</ul>
     <ul class="plain">${DB.resources.map((r) => `<li class="between" style="margin:0">${esc(r.name)} <span class="tag">${r.kind === "capital" ? "permanente" : "insumo"}</span><button class="btn sm" data-act="resrc-del" data-id="${r.id}">✕</button></li>`).join("") || `<li class="muted">Sem recursos</li>`}</ul></div></section>`;
@@ -1548,74 +1555,101 @@ function seedBasics() {
     { id: C.uid("rs"), name: "Câmera móvel", kind: "capital" }, { id: C.uid("rs"), name: "Kit de acesso venoso", kind: "consumivel" });
 }
 async function loadDemo() {
-  if (DB.sessions.length && !(await ask("Acrescentar os dados de exemplo aos dados existentes?"))) return;
+  if (DB.sessions.length && !(await ask("Acrescentar a biblioteca de exemplo aos dados existentes?"))) return;
+  const B = window.HC_BIBLIOTECA;
+  if (!B) return toast("Biblioteca de exemplo indisponível.");
   if (!DB.locations.length) seedBasics();
+  const addRes = (name, kind = "capital") => DB.resources.find((r) => r.name === name) || (DB.resources.push({ id: C.uid("rs"), name, kind }), DB.resources[DB.resources.length - 1]);
+  ["Simulador obstétrico de alta fidelidade", "Ventilador mecânico de treinamento", "Manequim de RCP com feedback", "DEA de treinamento", "Óculos de realidade virtual", "Incubadora de transporte"].forEach((n) => addRes(n));
+  addRes("Kit de sulfato de magnésio (simulado)", "consumivel");
   const P = (name, role) => { const p = { id: C.uid("p"), name, email: name.toLowerCase().normalize("NFD").replace(/[^a-z ]/g, "").trim().replace(/\s+/g, ".") + "@exemplo.edu.br", role }; DB.people.push(p); return p; };
-  const st = ["Ana Souza", "Bruno Lima", "Carla Mendes", "Diego Rocha", "Elisa Prado"].map((n) => P(n, "estudante"));
-  const fac = [P("Helena Martins", "docente"), P("Rafael Costa", "docente")];
-  P("Marcos Vieira", "pe");
-  const E = (title, type, items, instructions = "") => { const e = { id: C.uid("ev"), title, type, instructions, items: items.map((it) => ({ id: C.uid("i"), ...it })) }; DB.evaluations.push(e); return e; };
-  const evSep = E("Checklist – manejo inicial da sepse", "avaliador", [
-    { text: "Reconhece sinais de sepse (qSOFA/SIRS) e comunica a equipe médica", kind: "check", points: 2, critical: true },
-    { text: "Solicita lactato e hemoculturas antes do antimicrobiano", kind: "check", points: 2 },
-    { text: "Inicia cristaloide 30 mL/kg nas primeiras 3 horas", kind: "check", points: 2, critical: true },
-    { text: "Administra antimicrobiano na primeira hora", kind: "check", points: 2, critical: true },
-    { text: "Reavalia PAM e perfusão após o volume", kind: "check", points: 1 },
-    { text: "Comunicação em alça fechada", kind: "escala", max: 4 },
-    { text: "Liderança da equipe", kind: "multipla", options: [{ label: "Clara", points: 2 }, { label: "Parcial", points: 1 }, { label: "Ausente", points: 0 }] },
-    { text: "Comentários do avaliador", kind: "texto" },
-  ], "Marque cada ação observada. Itens críticos não realizados sinalizam necessidade de remediação.");
-  const evCrm = E("Monitoramento de equipe (CRM)", "monitor", [
-    { text: "Consciência situacional", kind: "escala", max: 4 }, { text: "Uso de recursos e pedido de ajuda", kind: "escala", max: 4 },
-    { text: "Comunicação", kind: "escala", max: 4 }, { text: "Distribuição de tarefas", kind: "escala", max: 4 } ], "0 = ausente; 4 = exemplar.");
-  const evPre = E("Pré-teste – sepse", "antes", [
-    { text: "Meta de PAM no choque séptico", kind: "multipla", options: [{ label: "≥ 65 mmHg", points: 1 }, { label: "≥ 90 mmHg", points: 0 }, { label: "≥ 50 mmHg", points: 0 }] },
-    { text: "Volume inicial de cristaloide recomendado", kind: "multipla", options: [{ label: "30 mL/kg", points: 1 }, { label: "10 mL/kg", points: 0 }, { label: "500 mL fixos", points: 0 }] } ]);
-  const evRef = E("Reflexão pós-simulação", "reflexao", [
-    { text: "O que aconteceu no cenário e como você se sentiu?", kind: "texto" }, { text: "Que decisões você tomaria de forma diferente? Por quê?", kind: "texto" },
-    { text: "Como aplicará o que aprendeu na prática clínica?", kind: "texto" } ]);
-  if (window.SCENARIO_PROGRAMS) importEngineScenarios();
-  let sep = DB.scenarios.find((s) => /seps/i.test(s.title));
-  if (!sep) { sep = { id: C.uid("sc"), title: "Sepse com hipotensão", simulator: "Manequim adulto", summary: "Paciente com foco urinário evoluindo com hipotensão.", objectives: ["Reconhecer sepse", "Aplicar pacote da 1ª hora"],
-    annotations: CRM_MARKERS.map(([label, cat]) => ({ id: C.uid("a"), label, cat, color: colorFor(cat) })), evaluationIds: [], retentionDays: 0 }; DB.scenarios.push(sep); }
-  sep.evaluationIds = [evSep.id, evCrm.id, evPre.id, evRef.id];
-  DB.scenarios.filter((s) => s !== sep && !(s.evaluationIds || []).length).forEach((s) => (s.evaluationIds = [evCrm.id, evRef.id]));
-  const course = { id: C.uid("c"), code: "ENF-SIM-01", title: "Simulação em Urgência e Emergência", term: "2026/2", participantIds: st.map((p) => p.id), facultyIds: fac.map((p) => p.id) };
-  DB.courses.push(course);
-  const L = DB.locations, Rs = DB.resources;
-  const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); d.setHours(8, 0, 0, 0);
-  const until = new Date(+d + 56 * DAY);
-  DB.reservations.push({ id: C.uid("r"), title: "ENF-SIM-01 · Sepse", courseId: course.id, scenarioId: sep.id, locationId: L[0].id, resourceIds: [Rs[0].id, Rs[1].id], color: "#15803D",
-    start: d.toISOString(), end: new Date(+d + 2 * 3600000).toISOString(), recur: { freq: "semanal", until: isoDate(+until), skip: [] }, status: "aprovada", notes: "Turma A" });
-  const d2 = new Date(+d + DAY + 5 * 3600000);
-  DB.reservations.push({ id: C.uid("r"), title: "ENF-SIM-01 · Treino de habilidades", courseId: course.id, scenarioId: "", locationId: L[1].id, resourceIds: [Rs[3].id], color: "#B45309",
-    start: d2.toISOString(), end: new Date(+d2 + 3600000).toISOString(), recur: { freq: "nenhuma" }, status: "pendente", notes: "Solicitado por docente" });
-  // sessão gravada sintética (sem vídeo): deterioração e resposta ao volume
-  const dur = 720, samples = [];
-  const lerp = (a, b, x) => a + (b - a) * Math.max(0, Math.min(1, x));
+  const st = ["Ana Souza", "Bruno Lima", "Carla Mendes", "Diego Rocha", "Elisa Prado", "Fábio Nunes", "Gabriela Reis", "Heitor Campos", "Isabela Freitas", "João Teles"].map((n) => P(n, "estudante"));
+  const fac = [P("Helena Martins", "docente"), P("Rafael Costa", "docente"), P("Juliana Alves", "docente")];
+  const pes = [P("Marcos Vieira", "pe"), P("Luana Bastos", "pe")];
+  // avaliações e cenários da biblioteca (referências completas ficam em cada item)
+  const ref = (keys) => (keys || []).map((k) => B.refs[k]).filter(Boolean);
+  const EV = {};
+  for (const e of B.evaluations) {
+    EV[e.key] = DB.evaluations.find((x) => x.libKey === e.key) || (() => {
+      const x = { id: C.uid("ev"), libKey: e.key, title: e.title, type: e.type, instructions: e.instructions || "", refs: ref(e.refs), items: e.items.map((it) => ({ id: C.uid("i"), ...it })) };
+      DB.evaluations.push(x); return x; })();
+  }
+  const SC = {};
+  for (const sc of B.scenarios) {
+    SC[sc.key] = DB.scenarios.find((x) => x.libKey === sc.key) || (() => {
+      const x = { id: C.uid("sc"), libKey: sc.key, title: sc.title, simulator: sc.simulator, summary: sc.summary, objectives: [...sc.objectives],
+        annotations: sc.annotations.map(([label, cat]) => ({ id: C.uid("a"), label, cat, color: colorFor(cat) })), evaluationIds: sc.evals.map((k) => EV[k].id),
+        retentionDays: sc.retentionDays || 0, refs: ref(sc.refs) };
+      DB.scenarios.push(x); return x; })();
+  }
+  // cenários programados do motor SimClin (sinais vitais ao vivo) entram no curso de urgência
+  const before = DB.scenarios.length;
+  if (window.SCENARIO_PROGRAMS) importEngineScenarios(true);
+  const engine = DB.scenarios.slice(before);
+  engine.forEach((x) => { if (!(x.evaluationIds || []).length) x.evaluationIds = [EV.debrief.id, EV.efet.id, EV.reflexao.id]; });
+  const CO = {};
+  B.courses.forEach((c, ci) => {
+    const students = c.key === "doc" ? [] : st.filter((_, i) => ci === 0 || i % 2 === (ci % 2 === 1 ? 0 : 1));
+    const x = { id: C.uid("c"), code: c.code, title: c.title, term: c.term, participantIds: c.key === "doc" ? fac.map((p) => p.id) : students.map((p) => p.id),
+      facultyIds: c.key === "doc" ? [fac[0].id] : [fac[ci % 3].id, fac[(ci + 1) % 3].id], scenarioIds: [...c.scenarios.map((k) => SC[k].id), ...(c.key === "urg" ? engine.map((e) => e.id) : [])] };
+    DB.courses.push(x); CO[c.key] = x;
+  });
+  // agenda: uma série semanal por curso e uma oficina docente aguardando aprovação
+  const L = DB.locations, R = (n) => DB.resources.find((r) => r.name === n)?.id;
+  const monday = new Date(); monday.setDate(monday.getDate() + ((8 - monday.getDay()) % 7 || 7)); monday.setHours(0, 0, 0, 0);
+  const until = isoDate(+monday + 63 * DAY);
+  const res = (course, sc, day, h, dur, loc, rs, color, extra = {}) => { const st0 = new Date(+monday + day * DAY + h * 3600000);
+    DB.reservations.push({ id: C.uid("r"), title: `${course.code} · ${sc.title.split(/[–(:]/)[0].trim()}`, courseId: course.id, scenarioId: sc.id, locationId: loc.id, resourceIds: rs.filter(Boolean), color,
+      start: st0.toISOString(), end: new Date(+st0 + dur * 3600000).toISOString(), recur: { freq: "semanal", until, skip: [] }, status: "aprovada", notes: "", ...extra }); };
+  res(CO.urg, SC.pcr, 0, 8, 2, L[0], [R("Manequim de RCP com feedback"), R("DEA de treinamento")], "#B91C1C");
+  res(CO.obs, SC.pe, 1, 13, 2, L[0], [R("Simulador obstétrico de alta fidelidade"), R("Kit de sulfato de magnésio (simulado)")], "#DB2777");
+  res(CO.com, SC.lgbt, 2, 8, 1.5, L[1], [], "#7C3AED");
+  res(CO.urg, SC.vm, 2, 14, 2, L[0], [R("Ventilador mecânico de treinamento"), R("Óculos de realidade virtual")], "#2F7CC1");
+  res(CO.pg, SC.osce, 3, 14, 3, L[1], [], "#0F766E");
+  res(CO.doc, SC.oficina, 4, 9, 2, L[2] || L[1], [], "#B45309", { status: "pendente", recur: { freq: "nenhuma" }, notes: "Solicitado pela coordenação" });
+  // sessão gravada sintética (sem vídeo): pré-eclâmpsia grave com crise convulsiva
+  const dur = 900, samples = [], lerp = (a, b, x) => a + (b - a) * Math.max(0, Math.min(1, x));
   for (let t = 0; t <= dur; t += 5) {
-    const worse = t / 260, better = (t - 280) / 300, fx = t < 280;
-    samples.push({ t, rhythm: "sinusal",
-      hr: Math.round(fx ? lerp(118, 132, worse) : lerp(132, 102, better)), spo2: Math.round(fx ? lerp(92, 88, worse) : lerp(88, 95, better)),
-      sbp: Math.round(fx ? lerp(92, 78, worse) : lerp(78, 108, better)), dbp: Math.round(fx ? lerp(55, 44, worse) : lerp(44, 64, better)),
-      rr: Math.round(fx ? lerp(26, 30, worse) : lerp(30, 20, better)), temp: 38.6 });
+    const seiz = t >= 240 && t < 300, post = t >= 300;
+    samples.push({ t, rhythm: seiz ? "taquicardia sinusal" : "sinusal", temp: 36.8,
+      hr: Math.round(seiz ? 132 : post ? lerp(124, 98, (t - 300) / 400) : lerp(96, 104, t / 240)),
+      spo2: Math.round(seiz ? lerp(97, 86, (t - 240) / 50) : post ? lerp(88, 97, (t - 300) / 120) : 98),
+      sbp: Math.round(t < 420 ? lerp(168, 176, t / 300) : lerp(176, 148, (t - 420) / 300)), dbp: Math.round(t < 420 ? lerp(110, 114, t / 300) : lerp(114, 96, (t - 420) / 300)),
+      rr: Math.round(seiz ? 8 : post ? lerp(24, 18, (t - 300) / 300) : 18) });
   }
   const A = (t, label, cat, source = "manual", text = "") => ({ id: C.uid("n"), t, label, cat, color: source === "simulador" ? (cat === "Estado do cenário" ? "#7C3AED" : "#2F7CC1") : colorFor(cat), text, source, author: source === "simulador" ? "Simulador" : fac[0].name });
-  const ses = { id: C.uid("s"), title: "ENF-SIM-01 · Sepse · Turma A", courseId: course.id, scenarioId: sep.id, locationId: L[0].id, participantIds: st.slice(0, 4).map((p) => p.id),
-    startedAt: Date.now() - 2 * DAY, duration: dur, media: [], samples, transcript: [
-      { t: 35, text: "Paciente taquicárdico e febril, vou chamar o médico" }, { t: 150, text: "Vamos colher lactato e hemoculturas agora" }, { t: 262, text: "Iniciando soro fisiológico trinta mililitros por quilo" } ],
-    annotations: [A(0, "Cenário iniciado", "Sistema", "simulador"), A(30, "Avaliação inicial (ABCDE)", "Intervenção", "simulador"), A(42, "Comunicação em alça fechada", "Trabalho em equipe", "manual", "Confirmou a prescrição em voz alta"),
-      A(150, "Coleta de lactato/hemoculturas", "Intervenção", "simulador"), A(200, "→ Choque séptico", "Estado do cenário", "simulador"), A(215, "Ponto para o debriefing", "Debriefing", "manual", "Demora na reposição volêmica"),
-      A(262, "Cristaloide 30 mL/kg", "Intervenção", "simulador"), A(300, "Liderança clara", "Trabalho em equipe", "manual"), A(410, "Erro / omissão", "Segurança do paciente", "manual", "Antimicrobiano após 60 min"),
-      A(420, "Antimicrobiano", "Intervenção", "simulador"), A(600, "→ Estabilização", "Estado do cenário", "simulador"), A(700, "Boa prática", "Destaque", "manual", "Reavaliação da PAM após volume")],
-    results: [], notes: "Reação: equipe ansiosa no início.\nAnálise: atraso no antimicrobiano; boa comunicação.\nSíntese: aplicar o pacote da 1ª hora com checklist visual.", consent: true, createdBy: fac[0].name };
-  const R0 = (ev, subj, answers, t) => ({ id: C.uid("res"), evaluationId: ev.id, subjectId: subj, evaluatorId: fac[0].id, evaluator: fac[0].name, role: "docente", answers: Object.fromEntries(ev.items.map((it, i) => [it.id, answers[i]]).filter((x) => x[1] !== undefined)), submittedAt: ses.startedAt + dur * 1000, ...(t !== undefined ? { t } : {}) });
-  ses.results.push(R0(evSep, st[0].id, [true, true, true, false, true, 3, 0, "Atrasou o antimicrobiano."], 700), R0(evSep, st[1].id, [true, true, true, true, false, 4, 1, ""]),
-    R0(evCrm, "equipe", [3, 2, 4, 3], 650), R0(evPre, st[0].id, [0, 0]), R0(evPre, st[1].id, [0, 1]), R0(evPre, st[2].id, [0, 0]), R0(evRef, st[0].id, ["Fiquei nervosa no início.", "Prescreveria o antimicrobiano mais cedo.", "Usarei o checklist do pacote."]));
-  ses.results.slice(3).forEach((r) => { r.evaluatorId = r.subjectId; r.evaluator = nameOf("people", r.subjectId); r.role = "estudante"; });
+  const team = CO.obs.participantIds.slice(0, 4);
+  const ses = { id: C.uid("s"), title: `${CO.obs.code} · Pré-eclâmpsia grave · Turma A`, courseId: CO.obs.id, scenarioId: SC.pe.id, locationId: L[0].id, participantIds: team,
+    startedAt: Date.now() - 2 * DAY, duration: dur, media: [], samples, consent: true, createdBy: fac[0].name,
+    transcript: [{ t: 40, text: "Pressão de cento e setenta por cento e doze, ela está com dor de cabeça e vendo pontos brilhantes" }, { t: 245, text: "Está convulsionando, vira de lado, proteção, oxigênio" },
+      { t: 330, text: "Iniciando sulfato de magnésio, dose de ataque" }, { t: 425, text: "Vamos tratar a pressão, hidralazina conforme protocolo" }, { t: 600, text: "Reflexo patelar presente, frequência respiratória dezoito" }],
+    annotations: [A(0, "Cenário iniciado", "Sistema", "simulador"), A(45, "Reconheceu gravidade", "Avaliação", "manual", "Identificou cefaleia e escotomas"), A(120, "Pedido de ajuda", "Trabalho em equipe"),
+      A(240, "→ Convulsão", "Estado do cenário", "simulador"), A(250, "Decúbito lateral / via aérea", "Intervenção", "manual", "Sem contenção, boa proteção"), A(270, "Ponto para o debriefing", "Debriefing", "manual", "Demorou a ofertar O₂"),
+      A(330, "Sulfato de magnésio", "Intervenção", "simulador"), A(420, "Anti-hipertensivo", "Intervenção", "simulador"), A(470, "Acolheu a gestante", "Comunicação", "manual", "Explicou o que aconteceu ao acompanhante"),
+      A(600, "Reflexo patelar avaliado", "Monitorização"), A(720, "Erro / omissão", "Segurança do paciente", "manual", "Não checou vitalidade fetal após a crise"), A(860, "→ Estabilização", "Estado do cenário", "simulador")],
+    results: [], notes: "Reação: grupo ansioso na convulsão (coerente com Uncu et al., 2025).\nAnálise: manejo seguro da crise; atraso no O₂ e na avaliação fetal.\nSíntese: checklist visual da eclâmpsia na sala e papéis definidos antes do cenário." };
+  const R0 = (ev, subj, answers, t, by = fac[0]) => ({ id: C.uid("res"), evaluationId: ev.id, subjectId: subj, evaluatorId: by.id, evaluator: by.name, role: by.role, submittedAt: ses.startedAt + dur * 1000,
+    answers: Object.fromEntries(ev.items.map((it, i) => [it.id, answers[i]]).filter((x) => x[1] !== undefined)), ...(t !== undefined ? { t } : {}) });
+  const who = (id) => DB.people.find((p) => p.id === id);
+  ses.results.push(
+    R0(EV.pe, team[0], [true, true, true, false, true, true, true, true, false, 3, "Ótima proteção na crise; ofertar O₂ mais cedo."], 760),
+    R0(EV.pe, team[1], [true, true, true, true, true, false, false, true, false, 2, "Revisar sinais de toxicidade do magnésio."]),
+    R0(EV.comMat, team[2], [4, 3, 4, 3, 2, 3, 4, "\"Vou ficar aqui com você enquanto cuidamos da pressão.\""]),
+    R0(EV.debrief, "equipe", [1, true, true, true, true, true, 0, 3, "Usar o vídeo da convulsão na fase de análise."], 880, fac[1]),
+    ...team.map((id, i) => R0(EV.ansiedade, id, [[3, 2, 4, 3], [4, 2, 3, 2], [2, 3, 4, 3], [3, 3, 3, 3]][i], undefined, who(id))),
+    R0(EV.reflexao, team[0], ["Fiquei assustada na convulsão, mas o grupo se organizou.", "Ofertaria oxigênio logo no início.", "Vou revisar o protocolo de sulfato de magnésio."], undefined, who(team[0])));
   DB.sessions.unshift(ses);
-  save(); render(); toast("Dados de exemplo carregados.");
+  if (!DB.settings.institution) DB.settings.institution = "Centro de Simulação Clínica";
+  save(); render(); toast(`Biblioteca carregada: ${B.courses.length} cursos, ${B.scenarios.length} cenários e ${B.evaluations.length} avaliações baseados em ${Object.keys(B.refs).length} referências.`, 6000);
 }
+const shortRef = (r) => { const y = (String(r).match(/\((\d{4})\)/) || [])[1] || "s.d."; const head = String(r).split(/\(\d{4}\)/)[0]; const first = head.split(",")[0].trim();
+  if (/^INACSL/.test(first)) { const t = (String(r).split(/\(\d{4}\)\.\s*/)[1] || "").split(". ")[0]; const m = t.match(/Practice®?\s*:?\s*(.+)$/);
+    const std = m ? m[1].replace(/:.*$/, "").replace(/®/g, "").trim() : "";
+    return `INACSL, ${y} – ${std || "Preâmbulo"}`; }
+  const second = (head.match(/&\s*([^,]+),/) || [])[1];
+  if (second && (head.match(/,/g) || []).length <= 3) return `${first} & ${second.trim()}, ${y}`;
+  return `${first}${/,.*(&|et al)/.test(head) ? " et al." : ""}, ${y}`; };
+const refHtml = (r) => { const doi = (String(r).match(/https:\/\/doi\.org\/\S+/) || [])[0]; return `${esc(doi ? r.replace(doi, "").trim() : r)}${doi ? ` <a href="${esc(doi)}" target="_blank" rel="noopener">${esc(doi.replace("https://", ""))}</a>` : ""}`; };
 
 // ═════════════════════════════ AÇÕES (delegação) ══════════════════════════
 const ACT = {
